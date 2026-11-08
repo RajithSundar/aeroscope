@@ -1,16 +1,247 @@
 {
-  "optimal_k": 6,
-  "kmeans_silhouette_score": 0.781,
-  "kmeans_davies_bouldin_index": 0.3021,
-  "kmeans_vs_ward_agreement_ari": 1.0,
-  "multi_season_pattern_recovery_ari": 1.0,
-  "naive_annual_average_recovery_ari": 0.6049,
-  "cluster_counts": {
-    "C5: Urban-Vehicular Traffic & Mixed Metro Corridor": 32,
-    "C6: Clean Coastal, Ghats & Highland Baseline": 19,
-    "C4: Severe Winter Inversion & Dense IGP Hotspot": 17,
-    "C3: Chronic Coal & Heavy Industrial Belt (Eastern India)": 16,
-    "C1: Post-Monsoon Stubble/Biomass Burning (NW India)": 14,
-    "C2: Pre-Monsoon Arid Dust Storm Belt (Thar/W. India)": 10
+  "n_cities": 55,
+  "years": [
+    2023,
+    2024,
+    2025
+  ],
+  "chosen_k": 6,
+  "kmeans_silhouette": 0.3416,
+  "kmeans_davies_bouldin": 1.085,
+  "kmeans_vs_ward_ari": 0.9276,
+  "bootstrap_mean_ari": 0.7419,
+  "cities_with_confidence_ge_0_8": 41,
+  "year_to_year_ari": {
+    "2023_vs_2024": 0.702,
+    "2023_vs_2025": 0.545,
+    "2024_vs_2025": 0.649
+  },
+  "share_of_cities_in_pooled_cluster_by_year": {
+    "2023": 0.8,
+    "2024": 0.836,
+    "2025": 0.782
+  },
+  "naive_annual_vs_seasonal_ari": 0.2083,
+  "dbscan_eps": 3.634,
+  "dbscan_noise_cities": 3,
+  "consensus_outliers": [
+    "Silchar",
+    "Delhi",
+    "Srinagar"
+  ],
+  "evidence_tests": [
+    {
+      "signature": "postmonsoon_smoke",
+      "evidence": "Upwind fire detections per day in Oct-Nov (FIRMS)",
+      "status": "data not available"
+    },
+    {
+      "signature": "postmonsoon_smoke",
+      "evidence": "Fire detections within 300 km in Oct-Nov (FIRMS)",
+      "status": "data not available"
+    },
+    {
+      "signature": "winter_stagnation",
+      "evidence": "Winter days with poor ventilation, VC < 2000 m\u00b2/s (ERA5)",
+      "status": "data not available"
+    }
+  ],
+  "annual_average_fallacy": {
+    "city_pairs_with_annual_pm25_within_10pct": 257,
+    "of_which_different_cluster_and_shape_corr_below_0_5": 45,
+    "showcase_cities": [
+      "ahmedabad",
+      "baddi",
+      "guntur",
+      "silchar"
+    ],
+    "example_pairs": [
+      [
+        "guntur",
+        "silchar",
+        0.252
+      ],
+      [
+        "vijayawada",
+        "silchar",
+        0.266
+      ],
+      [
+        "eluru",
+        "silchar",
+        0.32
+      ],
+      [
+        "rajahmundry",
+        "silchar",
+        0.471
+      ],
+      [
+        "rajahmundry",
+        "baddi",
+        0.434
+      ],
+      [
+        "rajahmundry",
+        "nalagarh",
+        0.434
+      ],
+      [
+        "srikakulam",
+        "silchar",
+        0.375
+      ],
+      [
+        "vizianagaram",
+        "silchar",
+        0.386
+      ],
+      [
+        "nagaon",
+        "chandigarh",
+        0.334
+      ],
+      [
+        "nagaon",
+        "kala-amb",
+        0.286
+      ],
+      [
+        "nagaon",
+        "jammu",
+        0.37
+      ],
+      [
+        "sivasagar",
+        "chandigarh",
+        0.38
+      ],
+      [
+        "sivasagar",
+        "kala-amb",
+        0.34
+      ],
+      [
+        "sivasagar",
+        "jammu",
+        0.422
+      ],
+      [
+        "silchar",
+        "vadodara",
+        0.392
+      ]
+    ]
+  },
+  "clusters": {
+    "0": {
+      "key": "mixed",
+      "label": "Mixed sources, no dominant season",
+      "secondary": null,
+      "n_cities": 5,
+      "median_annual_pm25": 43.3,
+      "cities": [
+        "Guwahati",
+        "Nagaon",
+        "Nalbari",
+        "Sivasagar",
+        "Silchar"
+      ]
+    },
+    "1": {
+      "key": "postmonsoon_smoke",
+      "label": "Post-monsoon peak (Oct\u2013Nov; smoke not verified)",
+      "secondary": null,
+      "n_cities": 11,
+      "median_annual_pm25": 29.0,
+      "cities": [
+        "Ahmedabad",
+        "Vadodara",
+        "Rajkot",
+        "Bhopal",
+        "Dewas",
+        "Indore",
+        "Sagar",
+        "Ujjain",
+        "Jabalpur",
+        "Akola",
+        "Amravati"
+      ]
+    },
+    "2": {
+      "key": "industrial_combustion",
+      "label": "Industrial / coal combustion (high SO\u2082)",
+      "secondary": "urban_traffic",
+      "n_cities": 8,
+      "median_annual_pm25": 39.1,
+      "cities": [
+        "Visakhapatnam",
+        "Srikakulam",
+        "Vizianagaram",
+        "Bhilai",
+        "Korba",
+        "Raipur",
+        "Surat",
+        "Dhanbad"
+      ]
+    },
+    "3": {
+      "key": "urban_traffic",
+      "label": "Urban traffic & combustion (high NO\u2082)",
+      "secondary": "cleaner_baseline",
+      "n_cities": 8,
+      "median_annual_pm25": 30.9,
+      "cities": [
+        "Chandigarh",
+        "Baddi",
+        "Damtal",
+        "Kala Amb",
+        "Nalagarh",
+        "Paonta Sahib",
+        "Parwanoo",
+        "Sunder Nagar"
+      ]
+    },
+    "4": {
+      "key": "winter_stagnation",
+      "label": "Winter smog (stagnant air)",
+      "secondary": "urban_traffic",
+      "n_cities": 9,
+      "median_annual_pm25": 50.2,
+      "cities": [
+        "Patna",
+        "Gaya",
+        "Muzaffarpur",
+        "Delhi",
+        "Jammu",
+        "Srinagar",
+        "Jamshedpur",
+        "Ranchi",
+        "Gwalior"
+      ]
+    },
+    "5": {
+      "key": "cleaner_baseline",
+      "label": "Lower-pollution baseline",
+      "secondary": "winter_stagnation",
+      "n_cities": 14,
+      "median_annual_pm25": 21.9,
+      "cities": [
+        "Guntur",
+        "Kurnool",
+        "Nellore",
+        "Vijayawada",
+        "Anantapur",
+        "Chittoor",
+        "Eluru",
+        "Kadapa",
+        "Ongole",
+        "Rajahmundry",
+        "Bengaluru",
+        "Davanagere",
+        "Kalaburagi",
+        "Hubli-Dharwad"
+      ]
+    }
   }
 }

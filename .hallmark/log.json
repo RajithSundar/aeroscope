@@ -1,0 +1,61 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "site",
+  "shape": "Map / Diagram",
+  "theme": "kiln",
+  "axes": "dark/high-contrast-serif/warm",
+  "hero": "Settled",
+  "nav": "slab",
+  "footer": "mast",
+  "imagery": "the product",
+  "photos": [],
+  "entry": "search",
+  "fingerprint": "draw 3d32de",
+  "sections": [
+   "hero: search beside the smog map",
+   "year strip",
+   "two paths",
+   "comparison chart with end labels",
+   "today reading",
+   "month figures on smoked band",
+   "disclosure panels",
+   "close: search",
+   "footer mast"
+  ],
+  "signature": "the smog map",
+  "waived": [],
+  "prompt": "dark air-pollution guides for India NCAP cities",
+  "date": "2026-11-08"
+ },
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "site",
+  "shape": "Marquee Hero",
+  "theme": "editorial",
+  "axes": "light/display-condensed/chromatic-green",
+  "hero": "Counter",
+  "nav": "edge-aligned",
+  "footer": "index columns",
+  "imagery": "the product",
+  "photos": [],
+  "entry": "search",
+  "fingerprint": "draw 4645cf",
+  "sections": [
+   "hero: search over air calendar",
+   "rows: two ways in",
+   "before-after chart",
+   "switcher: next days, this month, plan",
+   "figures on ink band",
+   "disclosure panels",
+   "close: search",
+   "footer"
+  ],
+  "signature": "the air calendar",
+  "waived": [],
+  "prompt": "seasonal air-quality guides for India NCAP cities: residents and city clean-air officers",
+  "date": "2026-11-08"
+ }
+]
