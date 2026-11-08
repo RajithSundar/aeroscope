@@ -1,0 +1,16 @@
+{
+  "optimal_k": 6,
+  "kmeans_silhouette_score": 0.781,
+  "kmeans_davies_bouldin_index": 0.3021,
+  "kmeans_vs_ward_agreement_ari": 1.0,
+  "multi_season_pattern_recovery_ari": 1.0,
+  "naive_annual_average_recovery_ari": 0.6049,
+  "cluster_counts": {
+    "C5: Urban-Vehicular Traffic & Mixed Metro Corridor": 32,
+    "C6: Clean Coastal, Ghats & Highland Baseline": 19,
+    "C4: Severe Winter Inversion & Dense IGP Hotspot": 17,
+    "C3: Chronic Coal & Heavy Industrial Belt (Eastern India)": 16,
+    "C1: Post-Monsoon Stubble/Biomass Burning (NW India)": 14,
+    "C2: Pre-Monsoon Arid Dust Storm Belt (Thar/W. India)": 10
+  }
+}

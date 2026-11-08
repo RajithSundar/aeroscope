@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>INSAT-3D Regional Pollution-Hotspot Clustering Study</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geologica:wght,CRSV,SHRP@200..500,0,0..100&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-nav">
+    <div class="container site-nav__inner">
+      <a href="#top" class="site-nav__brand">
+        <span class="signal-dot" aria-hidden="true"></span>
+        <span>ISRO INSAT-3D aerosol clustering</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul class="site-nav__links">
+          <li><a href="#workbench">Airshed layers</a></li>
+          <li><a href="#section-cut">Seasonal section cut</a></li>
+          <li><a href="#validation">Cluster validation</a></li>
+          <li><a href="#scan-log">108-region scan log</a></li>
+          <li><a href="#study-notes">Study notes &amp; code</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- Stage Hero: Fits 1280x800 without scrolling -->
+    <section class="hero">
+      <div class="container hero__grid">
+        <div class="hero__copy">
+          <h1>Six airsheds hidden inside one average.</h1>
+          <p class="hero__lead">
+            INSAT-3D aerosol profiles group 108 Indian districts by season and emission source.
+          </p>
+          <div class="hero__actions">
+            <a href="#workbench" class="btn">Inspect the 108 regions</a>
+            <button type="button" id="hero-toggle-naive" class="btn btn--line">
+              Compare with annual average
+            </button>
+          </div>
+          <p class="muted" id="hero-live-readout">
+            Live sweep: <span class="num">39,528<span class="u">daily scans</span></span> at <span class="num">650<span class="u">nm</span></span> optical depth
+          </p>
+        </div>
+
+        <div class="hero__stage ticks" aria-label="Interactive 3D point cloud of India aerosol optical depth">
+          <canvas id="india-cloud-canvas"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 1: Statement Figures & Working Layer Toggles -->
+    <section id="workbench" class="section">
+      <div class="container">
+        <div class="section__head">
+          <div>
+            <h2 id="workbench-mode-title">Measured airshed layers and spatial projection</h2>
+            <p id="workbench-mode-subtitle">Spherical centroid Voronoi partitioning across 15 seasonal &amp; source features.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn--sm" id="mode-multiseason-btn" aria-pressed="true">
+              Multi-season pattern (ARI 1.00)
+            </button>
+            <button type="button" class="btn btn--line btn--sm" id="mode-naive-btn" aria-pressed="false">
+              Naive annual average (ARI 0.60)
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Statement Figures in Corner Ticks (Live-updated per selected algorithm) -->
+        <div class="metrics-strip">
+          <div class="metric-box ticks">
+            <span class="metric-box__label" id="stat-box1-label">Active algorithm outcome</span>
+            <div class="num num--statement" id="stat-changed">6<span class="u">centroids</span></div>
+            <span class="muted" id="stat-changed-sub">Optimal centroid partition (108 regions)</span>
+          </div>
+          <div class="metric-box ticks">
+            <span class="metric-box__label">Silhouette separation</span>
+            <div class="num num--statement" id="stat-silhouette">0.7803<span class="u">score</span></div>
+            <span class="muted" id="stat-silhouette-sub">Optimal k = 6 across 15 seasonal features</span>
+          </div>
+          <div class="metric-box ticks">
+            <span class="metric-box__label">Davies-Bouldin compactness</span>
+            <div class="num num--statement" id="stat-dbi">0.3027<span class="u">index</span></div>
+            <span class="muted" id="stat-dbi-sub">Lower index confirms tighter cluster cohesion</span>
+          </div>
+          <div class="metric-box ticks">
+            <span class="metric-box__label">Pattern recovery (ARI)</span>
+            <div class="num num--statement" id="stat-ari">1.0000<span class="u">ARI</span></div>
+            <span class="muted" id="stat-ari-sub">+39.5% gain over single annual average</span>
+          </div>
+        </div>
+
+        <div class="workbench-grid">
+          <!-- Left: Ruled list of working layer switches -->
+          <div>
+            <div class="control-bar">
+              <span id="layer-list-heading">Discovered airshed layers (k = 6)</span>
+              <button type="button" id="reset-layers-btn" class="switch-pill">Show all 108 regions</button>
+            </div>
+            <ul class="ruled-list" id="layer-toggles-list" aria-label="Cluster layer toggles">
+              <!-- Populated by app.js -->
+            </ul>
+          </div>
+
+          <!-- Right: Interactive Map / PCA / t-SNE Canvas + Selected Region Inspector -->
+          <div>
+            <div class="control-bar">
+              <div class="tab-list" role="tablist" aria-label="Projection view">
+                <button type="button" class="tab-btn" role="tab" data-view="geo" aria-selected="true">
+                  India geographic map
+                </button>
+                <button type="button" class="tab-btn" role="tab" data-view="pca" aria-selected="false">
+                  PCA manifold (63.4% variance)
+                </button>
+                <button type="button" class="tab-btn" role="tab" data-view="tsne" aria-selected="false">
+                  t-SNE non-linear projection
+                </button>
+              </div>
+              <div style="display: flex; gap: 0.4rem; align-items: center;">
+                <label for="algo-select" class="muted">Algorithm:</label>
+                <select id="algo-select" class="input-well" style="min-width: auto; padding: 0.35rem 0.65rem;">
+                  <option value="kmeans">K-Means++ Centroid Partition (k = 6)</option>
+                  <option value="ward">Hierarchical Tree Linkage (12 boundary shifts)</option>
+                  <option value="dbscan">DBSCAN Density + Noise (24 outliers isolated)</option>
+                  <option value="anomaly">Isolation Forest + LOF Anomalies (27 hotspots)</option>
+                  <option value="naive">Naive 1D Annual Average (31 misclassified)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="canvas-panel ticks">
+              <canvas id="spatial-manifold-canvas" height="390"></canvas>
+            </div>
+
+            <!-- Selected Region Telemetry Inspector -->
+            <div class="inspector-bar ticks" id="region-inspector">
+              <div class="inspector-bar__top">
+                <div style="display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap;">
+                  <h3 id="insp-name">Ludhiana, Punjab</h3>
+                  <span class="muted" id="insp-cluster">C1: Post-monsoon biomass smoke</span>
+                </div>
+                <div class="muted" id="insp-intervention">Intervention: In-situ crop residue management</div>
+              </div>
+              <div class="inspector-bar__metrics">
+                <div>
+                  <div class="muted">Winter (DJF)</div>
+                  <div class="num" id="insp-djf">0.580<span class="u">AOD</span></div>
+                </div>
+                <div>
+                  <div class="muted">Pre-monsoon (MAM)</div>
+                  <div class="num" id="insp-mam">0.540<span class="u">AOD</span></div>
+                </div>
+                <div>
+                  <div class="muted">Post-monsoon (ON)</div>
+                  <div class="num" id="insp-on">0.980<span class="u">AOD</span></div>
+                </div>
+                <div>
+                  <div class="muted" id="insp-source-label">Source signature</div>
+                  <div class="num" id="insp-source">3.42<span class="u">smoke spike</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: A Section Cut — Why Annual Averages Fail -->
+    <section id="section-cut" class="section section--quiet">
+      <div class="container">
+        <div class="section__head">
+          <div>
+            <h2>Seasonal section cut across identical annual averages</h2>
+            <p>Four districts with near-identical annual average AOD (0.53 to 0.70) diverge into opposite seasonal hotspots.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="button" class="switch-pill" id="cut-metric-aod" aria-pressed="true">INSAT-3D daytime AOD (650 nm)</button>
+            <button type="button" class="switch-pill" id="cut-metric-pm25" aria-pressed="false">Surface PM₂.₅ (µg/m³)</button>
+          </div>
+        </div>
+
+        <div class="cut-grid">
+          <div>
+            <ul class="ruled-list" id="cut-cities-list">
+              <!-- Populated by app.js -->
+            </ul>
+            <p class="muted" style="margin-top: 0.85rem;">
+              Click any region in the map or scan log below to compare its 12-month trajectory against these four reference archetypes.
+            </p>
+          </div>
+
+          <div class="canvas-panel ticks">
+            <canvas id="section-cut-canvas" height="360"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Cluster Validation & Linkage Ledger -->
+    <section id="validation" class="section">
+      <div class="container">
+        <div class="section__head">
+          <div>
+            <h2>Internal cluster validation from k = 2 to k = 10</h2>
+            <p>Evaluated across within-cluster sum of squares (WCSS), silhouette separation, and Davies-Bouldin compactness.</p>
+          </div>
+        </div>
+
+        <div class="workbench-grid">
+          <div>
+            <ul class="ruled-list" id="k-metrics-list">
+              <!-- Populated by app.js -->
+            </ul>
+          </div>
+          <div class="canvas-panel ticks">
+            <canvas id="validation-canvas" height="340"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Scan Log Table of 108 Regions -->
+    <section id="scan-log" class="section section--quiet">
+      <div class="container">
+        <div class="section__head">
+          <div>
+            <h2>Regional scan log and cluster assignments</h2>
+            <p>Click any district row to inspect its seasonal curve and highlight its position in the point cloud.</p>
+          </div>
+        </div>
+
+        <div class="table-controls">
+          <input
+            type="search"
+            id="region-search"
+            class="input-well"
+            style="min-width: 22rem;"
+            placeholder="Search region or state (e.g., Ludhiana, Dhanbad, Kerala)..."
+            aria-label="Search region or state"
+          />
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <label for="cluster-filter" class="muted">Filter airshed:</label>
+            <select id="cluster-filter" class="input-well" style="min-width: auto;">
+              <option value="ALL">All 108 regions</option>
+              <option value="C1">C1: Post-monsoon biomass smoke (14)</option>
+              <option value="C2">C2: Pre-monsoon mineral dust (10)</option>
+              <option value="C3">C3: Chronic coal &amp; industrial (16)</option>
+              <option value="C4">C4: Severe winter inversion IGP (17)</option>
+              <option value="C5">C5: Urban vehicular corridor (32)</option>
+              <option value="C6">C6: Clean coastal &amp; highland (19)</option>
+              <option value="ANOMALY">Isolation Forest anomalies (27)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="scan-table">
+            <thead>
+              <tr>
+                <th>Region &amp; State</th>
+                <th>Active algorithm assignment</th>
+                <th class="num-col">Annual AOD</th>
+                <th class="num-col">Winter (DJF)</th>
+                <th class="num-col">Spring (MAM)</th>
+                <th class="num-col">Monsoon (JJAS)</th>
+                <th class="num-col">Post-mon (ON)</th>
+                <th class="num-col">Coarse dust</th>
+                <th class="num-col">SO₂/NO₂</th>
+                <th class="num-col">CV %</th>
+              </tr>
+            </thead>
+            <tbody id="scan-table-body">
+              <!-- Populated by app.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5: Study Notes — Key Terms, Algorithm Code & How They Work Here -->
+    <section id="study-notes" class="section">
+      <div class="container">
+        <div class="section__head">
+          <div>
+            <h2>Key terms, algorithm code, and how each method works here</h2>
+            <p>Complete reference of satellite aerosol definitions, mathematical formulations, Python code, and behavior on our 108 Indian districts.</p>
+          </div>
+        </div>
+
+        <!-- Part A: 12 Key Terms & Definitions -->
+        <h3 style="margin-bottom: 0.85rem;">1. Key domain, mathematical, and validation terms</h3>
+        <div class="terms-grid">
+          <div class="term-card ticks">
+            <div class="term-card__head">
+              <span class="term-card__title">Aerosol Optical Depth (AOD)</span>
+              <span class="term-card__formula">650 nm (0.01–4.00)</span>
+            </div>
+            <p class="muted">
+              Vertical column extinction (scattering + absorption) of solar light by atmospheric particles measured by ISRO's INSAT-3D Imager (3DIMG_L2G_AOD). Clean coastal skies (Kochi, Thiruvananthapuram) average 0.16 AOD; heavy IGP and coal basins exceed 0.68 AOD.
+            </p>
+          </div>
+
+          <div class="term-card ticks">
+            <div class="term-card__head">
+              <span class="term-card__title">Fine vs. Coarse Fraction</span>
+              <span class="term-card__formula">PM₂.₅ / PM₁₀</span>
+            </div>
+            <p class="muted">
+              Separates combustion &amp; secondary aerosols (PM₂.₅/PM₁₀ &gt; 0.64 in C1 biomass smoke and C4 winter smog) from mechanically generated mineral dust ((PM₁₀ − PM₂.₅)/PM₁₀ ≈ 0.72 in C2 Thar desert storms).
+            </p>
+          </div>
+
+          <div class="term-card ticks">
+            <div class="term-card__head">
+              <span class="term-card__title">SO₂ / NO₂ Source Ratio</span>
+              <span class="term-card__formula">SO₂ / (NO₂ + 0.5)</span>
+            </div>
+            <p class="muted">
+              Chemical fingerprint separating stationary coal-fired thermal plants &amp; metallurgical smelters (Dhanbad 1.48, Singrauli 1.52 in C3) from mobile urban vehicular traffic corridors (Mumbai 0.24, Bengaluru 0.21 in C5).
+            </p>
+          </div>
+
+          <div class="term-card ticks">
+            <div class="term-card__head">
+              <span class="term-card__title">Winter PBL Inversion</span>
+              <span class="term-card__formula">PM₂.₅(DJF) / PM₂.₅(Ann)</span>
+            </div>
+            <p class="muted">
+              In Dec–Feb (DJF), radiative surface cooling across the Indo-Gangetic Plain traps cold air below a shallow thermal inversion lid (&lt;300 m), spiking surface PM₂.₅ to 1.65× annual mean in C4 (New Delhi, Patna, Kanpur).
+            </p>
+          </div>
+
+          <div class="term-card ticks">
+            <div class="term-card__head">
+              <span class="term-card__title">Kharif Stubble Smoke Spike</span>
+              <span class="term-card__formula">(PM₂.₅_ON / Ann) × (CO_ON / Ann)</span>
+            </div>
+            <p class="muted">
+              Compound multiplicative index isolating acute Oct–Nov paddy residue burning plumes in Punjab and Haryana (C1: Ludhiana 3.42×, Sangrur 3.58×), where fine particulates and carbon monoxide surge together.
+            </p>
+          </div>
+
+          <div class="term-card ticks">
+            <div class="term-card__head">
+              <span class="term-card__title">Log1p &amp; StandardScaler</span>
+              <span class="term-card__formula">z = (ln(1+x) − μ) / σ</span>
+            </div>
+            <p class="muted">
+              Stabilizes right-skewed log-normal concentration tails via ln(1 + x) and normalizes all 15 features to zero mean and unit variance so high-magnitude µg/m³ columns cannot dominate dimensionless seasonal shares.
+            </p>
+          </div>
+
+          <div class="term-card ticks">
+            <div class="term-card__head">
+              <span class="term-card__title">WCSS / Inertia &amp; K-Means++</span>
+              <span class="term-card__formula">Σ ||xᵢ − μₖ||² = 50.84</span>
+            </div>
+            <p class="muted">
+              Within-Cluster Sum of Squares minimized by K-Means. K-Means++ seeds initial centroids with probability proportional to D(x)², reaching a sharp elbow knee at k = 6 across our 108 districts.
+            </p>
+          </div>
+
+          <div class="term-card ticks">
+            <div class="term-card__head">
+              <span class="term-card__title">Ward &amp; Complete Linkage</span>
+              <span class="term-card__formula">Δ(A,B) min variance</span>
+            </div>
+            <p class="muted">
+              Bottom-up agglomerative tree merging starting from 108 singleton leaf districts. Reassigns 12 transitional boundary cities (Jaipur, Gwalior, Kolkata, Dehradun) that sit between adjacent airshed regimes.
+            </p>
+          </div>
+
+          <div class="term-card ticks">
+            <div class="term-card__head">
+              <span class="term-card__title">DBSCAN Core, Border &amp; Noise</span>
+              <span class="term-card__formula">ε = 0.78, MinPts = 5</span>
+            </div>
+            <p class="muted">
+              Groups dense neighborhoods without forcing outliers into clusters: identifies 58 Core regions (≥5 neighbors in ε = 0.78), 26 Border regions, and isolates 24 extreme Noise Outliers (−1).
+            </p>
+          </div>
+
+          <div class="term-card ticks">
+            <div class="term-card__head">
+              <span class="term-card__title">Silhouette Coefficient</span>
+              <span class="term-card__formula">(b − a) / max(a, b) = 0.7803</span>
+            </div>
+            <p class="muted">
+              Internal cohesion-vs-separation score in [−1, +1] comparing mean intra-cluster distance a(i) against nearest-neighbor cluster distance b(i). Peaks at 0.7803 for k = 6 (vs. 0.2942 for Naive Annual Average).
+            </p>
+          </div>
+
+          <div class="term-card ticks">
+            <div class="term-card__head">
+              <span class="term-card__title">Davies-Bouldin Index (DBI)</span>
+              <span class="term-card__formula">max (σᵢ + σⱼ) / d(μᵢ, μⱼ) = 0.3027</span>
+            </div>
+            <p class="muted">
+              Ratio of within-cluster dispersion to between-centroid separation (lower is better; 0 is ideal). Reaches global minimum 0.3027 at k = 6, whereas Naive Annual Average degrades to 1.7775.
+            </p>
+          </div>
+
+          <div class="term-card ticks">
+            <div class="term-card__head">
+              <span class="term-card__title">Adjusted Rand Index (ARI)</span>
+              <span class="term-card__formula">ARI = 1.0000 vs. 0.6049</span>
+            </div>
+            <p class="muted">
+              Chance-corrected external agreement metric proving that 15D multi-season clustering recovers 100% of physical regimes (ARI = 1.0000) while 1D annual averaging misclassifies 31 districts (ARI = 0.6049).
+            </p>
+          </div>
+        </div>
+
+        <!-- Part B: Python Code & How Each Algorithm Works Here -->
+        <h3 style="margin-bottom: 0.85rem;">2. Algorithm Python implementations and how they work on the 108 districts</h3>
+        <div class="algo-notes-list">
+          <!-- Card 1: K-Means++ -->
+          <div class="algo-note-card ticks">
+            <div class="algo-note-card__body">
+              <h3>Algorithm 1: K-Means++ Centroid Partitioning (k = 6)</h3>
+              <p class="muted">
+                Minimizes total Within-Cluster Sum of Squares (WCSS) across the 108 × 15 standardized feature matrix with 30 random restarts.
+              </p>
+              <ul class="algo-note-card__points">
+                <li>• <strong>How it works here:</strong> Seeds 6 centroids via D(x)² probability weighting, then links every Indian district by a radial Voronoi spoke to its nearest 15D centroid.</li>
+                <li>• <strong>Measured result:</strong> Converges to WCSS = 50.84, Silhouette = 0.7803, DBI = 0.3027, and ARI = 1.0000—cleanly separating C1 (14 districts), C2 (10), C3 (16), C4 (17), C5 (32), and C6 (19).</li>
+              </ul>
+            </div>
+            <pre class="code-well"><code>from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score, davies_bouldin_score
+
+# 1. Log1p skewness stabilization + Z-score standardization (108 x 15)
+X_raw = df_feat[CLUSTER_FEATURES].copy()
+for col in ["annual_no2_mean", "annual_so2_mean", "postmonsoon_smoke_spike",
+            "so2_to_no2_ratio", "pm25_peak_to_mean"]:
+    X_raw[col] = np.log1p(np.maximum(0.0, X_raw[col]))
+X_scaled = StandardScaler().fit_transform(X_raw)
+
+# 2. Fit optimal K-Means++ (k = 6)
+km = KMeans(n_clusters=6, init="k-means++", n_init=30, random_state=42)
+df_feat["kmeans_cluster"] = km.fit_predict(X_scaled)
+sil = silhouette_score(X_scaled, df_feat["kmeans_cluster"])   # 0.7803
+dbi = davies_bouldin_score(X_scaled, df_feat["kmeans_cluster"]) # 0.3027</code></pre>
+          </div>
+
+          <!-- Card 2: Hierarchical Agglomerative -->
+          <div class="algo-note-card ticks">
+            <div class="algo-note-card__body">
+              <h3>Algorithm 2: Hierarchical Agglomerative Tree Linkage (k = 6)</h3>
+              <p class="muted">
+                Builds a bottom-up binary merge tree (dendrogram) starting from 108 singleton district leaves without global centroid re-centering.
+              </p>
+              <ul class="algo-note-card__points">
+                <li>• <strong>How it works here:</strong> Connects each district to its closest hierarchical neighbor (e.g., Ludhiana → Rohtak, Kochi → Thiruvananthapuram) and cuts the tree at 6 branches.</li>
+                <li>• <strong>Why 12 boundary cities shift:</strong> Transitional climate cities on cluster borders—such as Jaipur (C2 → C5), Gwalior (C5 → C4), Kolkata (C5 → C3), and Dehradun (C6 → C5)—merge into adjacent branches (Sil = 0.6999, DBI = 0.4714, ARI = 0.8732).</li>
+              </ul>
+            </div>
+            <pre class="code-well"><code>from scipy.cluster.hierarchy import linkage
+from sklearn.cluster import AgglomerativeClustering
+
+# 1. Bottom-up dendrogram merge matrix (107 merges across 108 regions)
+Z_tree = linkage(X_scaled, method="ward")
+
+# 2. Agglomerative tree partitioning &amp; boundary-shift detection
+agg = AgglomerativeClustering(n_clusters=6, linkage="complete")
+df_feat["hier_cluster"] = agg.fit_predict(X_scaled)
+
+# Flag the 12 transitional boundary cities that shift cluster
+df_feat["hier_shifted"] = (df_feat["hier_code"] != df_feat["cluster_code"])</code></pre>
+          </div>
+
+          <!-- Card 3: DBSCAN -->
+          <div class="algo-note-card ticks">
+            <div class="algo-note-card__body">
+              <h3>Algorithm 3: DBSCAN Density-Based Clustering (ε = 0.78, MinPts = 5)</h3>
+              <p class="muted">
+                Forms clusters only where 15D neighborhood density exceeds MinPts = 5 within hypersphere radius ε = 0.78, refusing to force extreme outliers into clusters.
+              </p>
+              <ul class="algo-note-card__points">
+                <li>• <strong>How it works here:</strong> Classifies the 108 districts into 58 dense Core regions, 26 Border regions on cluster edges, and 24 isolated Noise Outliers (−1).</li>
+                <li>• <strong>Who gets isolated as Noise (−1):</strong> Hyper-polluted or extreme stations including New Delhi, Sri Ganganagar, Jaisalmer, Singrauli, and Ludhiana. Filtering out noise boosts core Silhouette to 0.7900 (DBI = 0.2939).</li>
+              </ul>
+            </div>
+            <pre class="code-well"><code>from sklearn.cluster import DBSCAN
+
+db = DBSCAN(eps=0.78, min_samples=5, metric="euclidean")
+db_labels = db.fit_predict(X_scaled)            # -1 = isolated noise outlier
+core_set = set(db.core_sample_indices_)         # 58 core stations
+
+df_feat["dbscan_role"] = [
+    "noise" if lbl == -1 else ("core" if i in core_set else "border")
+    for i, lbl in enumerate(db_labels)
+]  # 58 Core, 26 Border, 24 Noise Outliers (-1)</code></pre>
+          </div>
+
+          <!-- Card 4: Isolation Forest + LOF -->
+          <div class="algo-note-card ticks">
+            <div class="algo-note-card__body">
+              <h3>Algorithm 4: Isolation Forest + Local Outlier Factor (LOF) Anomalies</h3>
+              <p class="muted">
+                Combines global random-tree path isolation (Isolation Forest) with local k = 10 reachability density comparison (LOF).
+              </p>
+              <ul class="algo-note-card__points">
+                <li>• <strong>How it works here:</strong> Extreme hotspots require very few random hyperplane splits to isolate (short tree path → high anomaly score) or exhibit abnormal density relative to their local cluster neighbors.</li>
+                <li>• <strong>Measured result:</strong> Flags 27 consensus anomaly hotspots across India, led by Sri Ganganagar (0.624), Barmer (0.601), Jaisalmer (0.598), Singrauli (0.573), and New Delhi (0.562).</li>
+              </ul>
+            </div>
+            <pre class="code-well"><code>from sklearn.ensemble import IsolationForest
+from sklearn.neighbors import LocalOutlierFactor
+
+iso = IsolationForest(n_estimators=200, contamination=0.14, random_state=42)
+iso_pred = iso.fit_predict(X_scaled)
+anom_score = -iso.score_samples(X_scaled)       # Continuous severity score
+
+lof = LocalOutlierFactor(n_neighbors=10, contamination=0.14)
+lof_pred = lof.fit_predict(X_scaled)
+
+# Consensus hotspot flag (27 extreme districts)
+is_anomaly = (iso_pred == -1) | (lof_pred == -1) | (anom_score &gt;= np.percentile(anom_score, 82))</code></pre>
+          </div>
+
+          <!-- Card 5: PCA, t-SNE & Naive Annual Average ARI Proof -->
+          <div class="algo-note-card ticks">
+            <div class="algo-note-card__body">
+              <h3>Algorithm 5 &amp; 6: PCA / t-SNE Manifolds &amp; Naive Annual-Average Proof</h3>
+              <p class="muted">
+                Projects the 15D feature space into 2D via linear PCA (63.4% variance) and non-linear t-SNE (perplexity = 22), and benchmarks against 1D annual-average clustering.
+              </p>
+              <ul class="algo-note-card__points">
+                <li>• <strong>PCA &amp; t-SNE:</strong> PC1 (42.7% variance) tracks overall aerosol load &amp; winter inversion; PC2 (20.7% variance) separates spring coarse dust (C2) from autumn biomass smoke (C1) and coal industry (C3).</li>
+                <li>• <strong>Naive 1D Annual Average Failure:</strong> Clustering on annual mean AOD &amp; PM₂.₅ alone misgroups 31 of 108 districts (Ludhiana, Jodhpur, Dhanbad, etc.), dropping Silhouette to 0.2942 and ARI to 0.6049.</li>
+              </ul>
+            </div>
+            <pre class="code-well"><code>from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+from sklearn.metrics import adjusted_rand_score
+
+X_pca = PCA(n_components=2, random_state=42).fit_transform(X_scaled)
+X_tsne = TSNE(n_components=2, perplexity=22, init="pca", random_state=42).fit_transform(X_scaled)
+
+# Naive 1D Annual-Average Baseline (misclassifies 31 of 108 regions)
+X_naive = StandardScaler().fit_transform(df_feat[["annual_aod_mean", "annual_pm25_mean"]])
+km_naive = KMeans(n_clusters=6, n_init=30, random_state=42).fit_predict(X_naive)
+ari_naive = adjusted_rand_score(df_feat["cluster_code"], mapped_naive)  # 0.6049 vs 1.0000</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <div>
+        <span>INT396 Unsupervised Learning Study — ISRO INSAT-3D Imager (650 nm AOD) &amp; CPCB Regional Airshed Clustering</span>
+      </div>
+      <div class="num">
+        <span>39,528<span class="u">daily records</span></span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

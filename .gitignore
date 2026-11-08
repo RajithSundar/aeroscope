@@ -1,0 +1,18 @@
+# Study report & PDF generator (excluded from repo)
+*.pdf
+05_generate_project_pdf.py
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.env
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

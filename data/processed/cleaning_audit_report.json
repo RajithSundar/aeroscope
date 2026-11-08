@@ -1,0 +1,59 @@
+{
+  "initial_rows": 39528,
+  "initial_regions": 108,
+  "missing_before": {
+    "insat_daytime_aod": 402,
+    "aod_mean": 0,
+    "aod_max": 0,
+    "dust_mean": 0,
+    "pm2_5_mean": 474,
+    "pm2_5_max": 0,
+    "pm10_mean": 0,
+    "co_mean": 0,
+    "no2_mean": 0,
+    "so2_mean": 0,
+    "o3_mean": 0
+  },
+  "negative_glitches_fixed": {
+    "insat_daytime_aod": 0,
+    "aod_mean": 0,
+    "aod_max": 0,
+    "dust_mean": 0,
+    "pm2_5_mean": 0,
+    "pm2_5_max": 0,
+    "pm10_mean": 0,
+    "co_mean": 0,
+    "no2_mean": 0,
+    "so2_mean": 32,
+    "o3_mean": 0
+  },
+  "extreme_spikes_fixed": {
+    "insat_daytime_aod": 0,
+    "aod_mean": 0,
+    "aod_max": 0,
+    "dust_mean": 0,
+    "pm2_5_mean": 24,
+    "pm2_5_max": 0,
+    "pm10_mean": 0,
+    "co_mean": 0,
+    "no2_mean": 0,
+    "so2_mean": 0,
+    "o3_mean": 0
+  },
+  "pm25_exceeding_pm10_fixed": 0,
+  "missing_after": {
+    "insat_daytime_aod": 0,
+    "aod_mean": 0,
+    "aod_max": 0,
+    "dust_mean": 0,
+    "pm2_5_mean": 0,
+    "pm2_5_max": 0,
+    "pm10_mean": 0,
+    "co_mean": 0,
+    "no2_mean": 0,
+    "so2_mean": 0,
+    "o3_mean": 0
+  },
+  "final_regions": 108,
+  "engineered_feature_count": 51
+}
