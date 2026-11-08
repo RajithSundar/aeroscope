@@ -1,18 +1,28 @@
-# Study report & PDF generator (excluded from repo)
-*.pdf
-05_generate_project_pdf.py
+# Secrets
+.env
+
+# Large downloaded/derived data (re-create with start.bat --rebuild)
+data/raw/cams/
+data/raw/weather/
+data/raw/firms/
+data/raw/*.log
+data/processed/daily_cleaned.csv
 
 # Python cache & virtual environments
 __pycache__/
 *.py[cod]
-*$py.class
+.pytest_cache/
 .venv/
 venv/
 env/
-.env
 
-# OS & Editor files
+# OS & editor files
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+
+# Hallmark screenshots and graph cache
+.hallmark/shots/
+.hallmark/before/
+graphify-out/

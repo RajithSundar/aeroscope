@@ -1,0 +1,133 @@
+# Source: https://cpcb.gov.in/uploads/Non-Attainment_Cities.pdf (CPCB 'List of 131 Non-Attainment cities'). Built 2026-11-08.
+city_id,city,cpcb_name,state,lat,lon,list_status,coord_source
+guntur,Guntur,Guntur,Andhra Pradesh,16.2997,80.4573,non_attainment,open-meteo-geocoding
+kurnool,Kurnool,Kurnool,Andhra Pradesh,15.8289,78.036,non_attainment,open-meteo-geocoding
+nellore,Nellore,Nellore,Andhra Pradesh,14.4499,79.987,non_attainment,open-meteo-geocoding
+vijayawada,Vijayawada,Vijayawada,Andhra Pradesh,16.5074,80.6466,non_attainment,open-meteo-geocoding
+visakhapatnam,Visakhapatnam,Vishakhapatnam,Andhra Pradesh,17.6801,83.2016,non_attainment,open-meteo-geocoding
+anantapur,Anantapur,Anantapur,Andhra Pradesh,14.6778,77.6081,non_attainment,open-meteo-geocoding
+chittoor,Chittoor,Chitoor,Andhra Pradesh,13.2105,79.0956,non_attainment,open-meteo-geocoding
+eluru,Eluru,Eluru,Andhra Pradesh,16.7131,81.1044,non_attainment,open-meteo-geocoding
+kadapa,Kadapa,Kadapa,Andhra Pradesh,14.48,78.8235,non_attainment,open-meteo-geocoding
+ongole,Ongole,Ongole,Andhra Pradesh,15.5036,80.0445,non_attainment,open-meteo-geocoding
+rajahmundry,Rajahmundry,Rajahmundry,Andhra Pradesh,17.0052,81.7778,non_attainment,open-meteo-geocoding
+srikakulam,Srikakulam,Srikakulam,Andhra Pradesh,18.2989,83.8975,non_attainment,open-meteo-geocoding
+vizianagaram,Vizianagaram,Vizianagaram,Andhra Pradesh,18.1169,83.4115,non_attainment,open-meteo-geocoding
+guwahati,Guwahati,Guwahati,Assam,26.1844,91.7458,non_attainment,open-meteo-geocoding
+nagaon,Nagaon,Nagaon,Assam,26.35,92.6667,non_attainment,open-meteo-geocoding
+nalbari,Nalbari,Nalbari,Assam,26.4394,91.4404,non_attainment,open-meteo-geocoding
+sivasagar,Sivasagar,Sibsagar,Assam,26.9826,94.6425,non_attainment,manual
+silchar,Silchar,Silchar,Assam,24.8273,92.7979,non_attainment,open-meteo-geocoding
+patna,Patna,Patna,Bihar,25.5941,85.1356,non_attainment,open-meteo-geocoding
+gaya,Gaya,Gaya,Bihar,24.7969,85.0038,non_attainment,open-meteo-geocoding
+muzaffarpur,Muzaffarpur,Muzaffarpur,Bihar,26.1226,85.3906,non_attainment,open-meteo-geocoding
+chandigarh,Chandigarh,Chandigarh,Chandigarh,30.7363,76.7884,non_attainment,open-meteo-geocoding
+bhilai,Bhilai,Bhilai,Chhattisgarh,21.2092,81.4285,non_attainment,open-meteo-geocoding
+korba,Korba,Korba,Chhattisgarh,22.3458,82.6963,non_attainment,open-meteo-geocoding
+raipur,Raipur,Raipur,Chhattisgarh,21.2333,81.6333,non_attainment,open-meteo-geocoding
+delhi,Delhi,Delhi,Delhi,28.6139,77.209,non_attainment,manual
+surat,Surat,Surat,Gujarat,21.1959,72.8302,non_attainment,open-meteo-geocoding
+ahmedabad,Ahmedabad,Ahmedabad,Gujarat,23.0258,72.5873,non_attainment,open-meteo-geocoding
+vadodara,Vadodara,Vadodara,Gujarat,22.2994,73.2081,non_attainment,open-meteo-geocoding
+rajkot,Rajkot,Rajkot,Gujarat,22.2916,70.7932,million_plus_fc15,open-meteo-geocoding
+baddi,Baddi,Baddi,Himachal Pradesh,30.9578,76.7914,non_attainment,manual
+damtal,Damtal,Damtal,Himachal Pradesh,32.26,75.68,non_attainment,manual
+kala-amb,Kala Amb,Kala Amb,Himachal Pradesh,30.505,77.206,non_attainment,manual
+nalagarh,Nalagarh,Nalagarh,Himachal Pradesh,31.0417,76.723,non_attainment,manual
+paonta-sahib,Paonta Sahib,Paonta Sahib,Himachal Pradesh,30.4381,77.6245,non_attainment,manual
+parwanoo,Parwanoo,Parwanoo,Himachal Pradesh,30.8372,76.9614,non_attainment,manual
+sunder-nagar,Sunder Nagar,Sunder Nagar,Himachal Pradesh,31.5332,76.8923,non_attainment,manual
+jammu,Jammu,Jammu,Jammu & Kashmir,32.7353,74.8617,non_attainment,open-meteo-geocoding
+srinagar,Srinagar,Srinagar,Jammu & Kashmir,34.0857,74.8055,non_attainment,open-meteo-geocoding
+dhanbad,Dhanbad,Dhanbad,Jharkhand,23.7976,86.4299,non_attainment,open-meteo-geocoding
+jamshedpur,Jamshedpur,Jamshedpur,Jharkhand,22.8028,86.1855,million_plus_fc15,open-meteo-geocoding
+ranchi,Ranchi,Ranchi,Jharkhand,23.3432,85.3094,million_plus_fc15,open-meteo-geocoding
+bengaluru,Bengaluru,Bangalore,Karnataka,12.9719,77.5937,non_attainment,open-meteo-geocoding
+davanagere,Davanagere,Devanagere,Karnataka,14.4644,75.9218,non_attainment,manual
+kalaburagi,Kalaburagi,Gulburga,Karnataka,17.3358,76.8376,non_attainment,open-meteo-geocoding
+hubli-dharwad,Hubli-Dharwad,Hubli-Dharwad,Karnataka,15.3647,75.124,non_attainment,manual
+bhopal,Bhopal,Bhopal,Madhya Pradesh,23.2547,77.4029,non_attainment,open-meteo-geocoding
+dewas,Dewas,Dewas,Madhya Pradesh,22.9658,76.0553,non_attainment,open-meteo-geocoding
+indore,Indore,Indore,Madhya Pradesh,22.7179,75.8333,non_attainment,open-meteo-geocoding
+sagar,Sagar,Sagar,Madhya Pradesh,23.8388,78.7378,non_attainment,manual
+ujjain,Ujjain,Ujjain,Madhya Pradesh,23.1824,75.7764,non_attainment,open-meteo-geocoding
+gwalior,Gwalior,Gwalior,Madhya Pradesh,26.2298,78.1734,non_attainment,open-meteo-geocoding
+jabalpur,Jabalpur,Jabalpur,Madhya Pradesh,23.167,79.9501,million_plus_fc15,open-meteo-geocoding
+akola,Akola,Akola,Maharashtra,20.7096,76.9981,non_attainment,open-meteo-geocoding
+amravati,Amravati,Amravati,Maharashtra,20.9333,77.75,non_attainment,open-meteo-geocoding
+chhatrapati-sambhajinagar,Chhatrapati Sambhajinagar (Aurangabad),Aurangabad,Maharashtra,19.8762,75.3433,non_attainment,manual
+badlapur,Badlapur,Badlapur,Maharashtra,19.155,73.265,non_attainment,manual
+chandrapur,Chandrapur,Chandrapur,Maharashtra,19.9508,79.2952,non_attainment,open-meteo-geocoding
+jalgaon,Jalgaon,Jalgaon,Maharashtra,21.0029,75.566,non_attainment,open-meteo-geocoding
+jalna,Jalna,Jalna,Maharashtra,19.841,75.8864,non_attainment,open-meteo-geocoding
+kolhapur,Kolhapur,Kolhapur,Maharashtra,16.6956,74.2317,non_attainment,open-meteo-geocoding
+latur,Latur,Latur,Maharashtra,18.3972,76.5678,non_attainment,open-meteo-geocoding
+mumbai,Mumbai,Mumbai,Maharashtra,19.0728,72.8826,non_attainment,open-meteo-geocoding
+nagpur,Nagpur,Nagpur,Maharashtra,21.1463,79.0849,non_attainment,open-meteo-geocoding
+nashik,Nashik,Nashik,Maharashtra,19.9973,73.791,non_attainment,open-meteo-geocoding
+navi-mumbai,Navi Mumbai,Navi Mumbai,Maharashtra,19.033,73.0297,non_attainment,manual
+pune,Pune,Pune,Maharashtra,18.5196,73.8554,non_attainment,open-meteo-geocoding
+sangli,Sangli,Sangli,Maharashtra,16.8544,74.5642,non_attainment,open-meteo-geocoding
+solapur,Solapur,Solapur,Maharashtra,17.6715,75.9104,non_attainment,open-meteo-geocoding
+ulhasnagar,Ulhasnagar,Ulhasnagar,Maharashtra,19.2167,73.15,non_attainment,open-meteo-geocoding
+thane,Thane,Thane,Maharashtra,19.197,72.9635,non_attainment,open-meteo-geocoding
+vasai-virar,Vasai-Virar,Vasai-Virar,Maharashtra,19.3919,72.8397,million_plus_fc15,manual
+byrnihat,Byrnihat,Byrnihat,Meghalaya,26.045,91.871,non_attainment,manual
+dimapur,Dimapur,Dimapur,Nagaland,25.9117,93.7217,non_attainment,open-meteo-geocoding
+kohima,Kohima,Kohima,Nagaland,25.6747,94.111,non_attainment,open-meteo-geocoding
+angul,Angul,Angul,Odisha,20.8409,85.1019,non_attainment,open-meteo-geocoding
+balasore,Balasore,Balasore,Odisha,21.4927,86.9335,non_attainment,open-meteo-geocoding
+bhubaneswar,Bhubaneswar,Bhubaneswar,Odisha,20.2724,85.8338,non_attainment,open-meteo-geocoding
+cuttack,Cuttack,Cuttack,Odisha,20.465,85.8793,non_attainment,open-meteo-geocoding
+rourkela,Rourkela,Rourkela,Odisha,22.225,84.8641,non_attainment,open-meteo-geocoding
+talcher,Talcher,Talcher,Odisha,20.9493,85.2335,non_attainment,open-meteo-geocoding
+kalinga-nagar,Kalinga Nagar,Kalinga Nagar,Odisha,20.946,86.021,non_attainment,manual
+dera-bassi,Dera Bassi,Dera Bassi,Punjab,30.5873,76.8436,non_attainment,manual
+mandi-gobindgarh,Mandi Gobindgarh,Gobindgarh,Punjab,30.67,76.3,non_attainment,manual
+jalandhar,Jalandhar,Jalandhar,Punjab,31.3256,75.5792,non_attainment,open-meteo-geocoding
+khanna,Khanna,Khanna,Punjab,30.705,76.222,non_attainment,manual
+ludhiana,Ludhiana,Ludhiana,Punjab,30.912,75.8538,non_attainment,open-meteo-geocoding
+nangal,Nangal,Naya Nangal,Punjab,31.385,76.375,non_attainment,manual
+pathankot,Pathankot,Pathankot/Dera Baba,Punjab,32.2643,75.6421,non_attainment,manual
+patiala,Patiala,Patiala,Punjab,30.3362,76.3922,non_attainment,open-meteo-geocoding
+amritsar,Amritsar,Amritsar,Punjab,31.6223,74.8753,non_attainment,open-meteo-geocoding
+alwar,Alwar,Alwar,Rajasthan,27.5625,76.625,non_attainment,open-meteo-geocoding
+jaipur,Jaipur,Jaipur,Rajasthan,26.9196,75.7878,non_attainment,open-meteo-geocoding
+jodhpur,Jodhpur,Jodhpur,Rajasthan,26.2684,73.0059,non_attainment,open-meteo-geocoding
+kota,Kota,Kota,Rajasthan,25.1825,75.8391,non_attainment,open-meteo-geocoding
+udaipur,Udaipur,Udaipur,Rajasthan,24.5858,73.7135,non_attainment,open-meteo-geocoding
+thoothukudi,Thoothukudi,Thoothukudi,Tamil Nadu,8.7674,78.1342,non_attainment,open-meteo-geocoding
+tiruchirappalli,Tiruchirappalli,Trichy,Tamil Nadu,10.8155,78.6965,non_attainment,open-meteo-geocoding
+madurai,Madurai,Madurai,Tamil Nadu,9.919,78.1195,non_attainment,open-meteo-geocoding
+chennai,Chennai,Chennai,Tamil Nadu,13.0878,80.2785,million_plus_fc15,open-meteo-geocoding
+hyderabad,Hyderabad,Hyderabad,Telangana,17.384,78.4564,non_attainment,open-meteo-geocoding
+nalgonda,Nalgonda,Nalgonda,Telangana,17.0575,79.2684,non_attainment,manual
+patancheruvu,Patancheruvu,Patancheruvu,Telangana,17.5333,78.2645,non_attainment,manual
+sangareddy,Sangareddy,Sangareddy,Telangana,17.624,78.087,non_attainment,manual
+agra,Agra,Agra,Uttar Pradesh,27.1833,78.0167,non_attainment,open-meteo-geocoding
+prayagraj,Prayagraj,Allahabad,Uttar Pradesh,25.4448,81.8432,non_attainment,open-meteo-geocoding
+anpara,Anpara,Anpara,Uttar Pradesh,24.2003,82.7889,non_attainment,manual
+bareilly,Bareilly,Bareily,Uttar Pradesh,28.3668,79.4317,non_attainment,open-meteo-geocoding
+firozabad,Firozabad,Firozabad,Uttar Pradesh,27.1509,78.3978,non_attainment,open-meteo-geocoding
+gajraula,Gajraula,Gajraula,Uttar Pradesh,28.846,78.238,non_attainment,manual
+ghaziabad,Ghaziabad,Ghaziabad,Uttar Pradesh,28.6654,77.4391,non_attainment,open-meteo-geocoding
+jhansi,Jhansi,Jhansi,Uttar Pradesh,25.4589,78.5799,non_attainment,open-meteo-geocoding
+kanpur,Kanpur,Kanpur,Uttar Pradesh,26.4652,80.3498,non_attainment,open-meteo-geocoding
+khurja,Khurja,Khurja,Uttar Pradesh,28.2538,77.8554,non_attainment,open-meteo-geocoding
+lucknow,Lucknow,Lucknow,Uttar Pradesh,26.8393,80.9231,non_attainment,open-meteo-geocoding
+moradabad,Moradabad,Moradabad,Uttar Pradesh,28.8389,78.7768,non_attainment,open-meteo-geocoding
+noida,Noida,Noida,Uttar Pradesh,28.58,77.33,non_attainment,open-meteo-geocoding
+raebareli,Raebareli,Raebareli,Uttar Pradesh,26.2309,81.233,non_attainment,manual
+varanasi,Varanasi,Varanasi,Uttar Pradesh,25.3167,83.0104,non_attainment,open-meteo-geocoding
+gorakhpur,Gorakhpur,Gorakhpur,Uttar Pradesh,26.7663,83.3689,non_attainment,open-meteo-geocoding
+meerut,Meerut,Meerut,Uttar Pradesh,28.98,77.7064,million_plus_fc15,open-meteo-geocoding
+kashipur,Kashipur,Kashipur,Uttarakhand,29.2104,78.9619,non_attainment,manual
+rishikesh,Rishikesh,Rishikesh,Uttarakhand,30.0869,78.2676,non_attainment,manual
+dehradun,Dehradun,Dehradun,Uttarakhand,30.3244,78.0339,non_attainment,open-meteo-geocoding
+kolkata,Kolkata,Kolkata,West Bengal,22.5626,88.363,non_attainment,open-meteo-geocoding
+asansol-raniganj,Asansol-Raniganj,Asansol & Raniganj,West Bengal,23.6739,86.9524,non_attainment,manual
+barrackpore,Barrackpore,Barrackpore,West Bengal,22.7642,88.3776,non_attainment,manual
+durgapur,Durgapur,Durgapur,West Bengal,23.5158,87.308,non_attainment,open-meteo-geocoding
+haldia,Haldia,Haldia,West Bengal,22.0605,88.1098,non_attainment,open-meteo-geocoding
+howrah,Howrah,Howrah,West Bengal,22.5769,88.3186,non_attainment,open-meteo-geocoding
+faridabad,Faridabad,Faridabad,Haryana,28.4112,77.3132,million_plus_fc15,open-meteo-geocoding

@@ -1,220 +1,318 @@
 """
 02_clean_and_engineer.py
-Cleans the raw INSAT-3D AOD & air-quality daily time series and engineers the
-regional seasonal & pollution-source feature matrix for unsupervised clustering.
+Quality-checks the CAMS daily series for each NCAP city, adds the CPCB particulate AQI,
+links in fire detections (FIRMS) and ventilation (ERA5) where available, and builds:
 
-Outputs:
-  - data/processed/india_daily_cleaned.csv
-  - data/processed/india_regional_hotspot_features.csv
-  - data/processed/cleaning_audit_report.json
+  data/processed/daily_cleaned.csv             city x day, pollutants + particulate AQI
+  data/processed/city_features.csv             city-level seasonal/source features (all years pooled)
+  data/processed/city_features_by_year.csv     the same features per calendar year (for stability tests)
+  data/processed/monthly_profile.csv           city x month climatology + drivers (powers the calendar)
+  data/processed/cleaning_audit_report.json    what the QC step changed
+
+Clustering features use CAMS pollutant data only. Fire and ventilation features are kept OUT
+of clustering so they can serve as independent evidence when naming and validating clusters.
 """
 
+import glob
 import json
-import os
+
 import numpy as np
 import pandas as pd
 
+from aeroscope_core import aqi as aqi_lib
+from aeroscope_core.cities import load_city_cells
+from aeroscope_core.config import (CAMS_DIR, FIRMS_DIR, NAAQS_PM25_24H, PROCESSED_DIR, WEATHER_DIR, YEARS)
+from aeroscope_core.geo import haversine_km, is_upwind
 
 POLLUTANT_BOUNDS = {
-    "insat_daytime_aod": (0.01, 4.00),
-    "aod_mean": (0.01, 4.00),
-    "aod_max": (0.01, 5.00),
-    "dust_mean": (0.0, 2500.0),
-    "pm2_5_mean": (1.0, 950.0),
-    "pm2_5_max": (1.0, 1200.0),
-    "pm10_mean": (2.0, 1500.0),
-    "co_mean": (40.0, 15000.0),
-    "no2_mean": (0.2, 400.0),
-    "so2_mean": (0.1, 500.0),
-    "o3_mean": (1.0, 350.0),
+    "aod_mean": (0.0, 5.0),
+    "aod_max": (0.0, 6.0),
+    "dust_mean": (0.0, 3000.0),
+    "pm2_5_mean": (0.0, 1000.0),
+    "pm2_5_max": (0.0, 1500.0),
+    "pm10_mean": (0.0, 2000.0),
+    "co_mean": (0.0, 20000.0),
+    "no2_mean": (0.0, 500.0),
+    "so2_mean": (0.0, 600.0),
+    "o3_mean": (0.0, 400.0),
 }
+FIRE_RADIUS_KM = 300.0
+POOR_VENTILATION = 2000.0  # m2/s
+SEASONS = ["winter_djf", "premonsoon_mam", "monsoon_jjas", "postmonsoon_on"]
 
 
 def assign_imd_season(month: int) -> str:
-    """Maps calendar month to India Meteorological Department (IMD) standard seasons."""
+    """India Meteorological Department seasons."""
     if month in (12, 1, 2):
         return "winter_djf"
-    elif month in (3, 4, 5):
+    if month in (3, 4, 5):
         return "premonsoon_mam"
-    elif month in (6, 7, 8, 9):
+    if month in (6, 7, 8, 9):
         return "monsoon_jjas"
-    else:
-        return "postmonsoon_on"
+    return "postmonsoon_on"
 
 
-def clean_daily_data(df_raw: pd.DataFrame):
-    df = df_raw.copy()
-    df["date"] = pd.to_datetime(df["date"])
-    df = df.sort_values(["region", "date"]).reset_index(drop=True)
-
-    audit = {
-        "initial_rows": int(len(df)),
-        "initial_regions": int(df["region"].nunique()),
-        "missing_before": {col: int(df[col].isna().sum()) for col in POLLUTANT_BOUNDS},
-        "negative_glitches_fixed": {},
-        "extreme_spikes_fixed": {},
-        "pm25_exceeding_pm10_fixed": 0,
-    }
-
-    # Step 1: Detect & replace negative sensor calibration drift and unphysical upper spikes with NaN
-    for col, (low, high) in POLLUTANT_BOUNDS.items():
-        if col not in df.columns:
+# ----------------------------------------------------------------------------- loading
+def load_cams(city_cells: pd.DataFrame) -> pd.DataFrame:
+    frames = []
+    for _, c in city_cells.iterrows():
+        path = CAMS_DIR / f"{c['cell_id']}.csv"
+        if not path.exists():
+            print(f"  ! no CAMS data for {c['city']} ({c['cell_id']}) - skipped; re-run 01_fetch_cams.py")
             continue
-        neg_mask = df[col] < low
-        spike_mask = df[col] > high
-        audit["negative_glitches_fixed"][col] = int(neg_mask.sum())
-        audit["extreme_spikes_fixed"][col] = int(spike_mask.sum())
-        df.loc[neg_mask | spike_mask, col] = np.nan
+        df = pd.read_csv(path)
+        df.insert(0, "city_id", c["city_id"])
+        frames.append(df)
+    df = pd.concat(frames, ignore_index=True)
+    df["date"] = pd.to_datetime(df["date"])
+    return df
 
-    # Step 2: Temporal interpolation within each region for cloud-outage / missing sensor days
-    num_cols = [c for c in POLLUTANT_BOUNDS if c in df.columns]
-    df[num_cols] = (
-        df.groupby("region", group_keys=False)[num_cols]
-        .apply(lambda g: g.interpolate(method="linear", limit_direction="both"))
-    )
 
-    # Fallback median imputation if any edge NaNs remain
-    for col in num_cols:
-        if df[col].isna().any():
-            df[col] = df[col].fillna(df.groupby("geo_zone")[col].transform("median"))
+def load_weather(city_cells: pd.DataFrame) -> pd.DataFrame | None:
+    frames = []
+    for _, c in city_cells.iterrows():
+        path = WEATHER_DIR / f"{c['cell_id']}.csv"
+        if path.exists():
+            df = pd.read_csv(path)
+            df.insert(0, "city_id", c["city_id"])
+            frames.append(df)
+    if not frames:
+        return None
+    df = pd.concat(frames, ignore_index=True)
+    df["date"] = pd.to_datetime(df["date"])
+    return df
 
-    # Step 3: Enforce physical aerosol consistency: fine PM2.5 cannot exceed coarse+fine PM10
-    inconsistent_pm = df["pm2_5_mean"] > df["pm10_mean"] * 0.96
-    audit["pm25_exceeding_pm10_fixed"] = int(inconsistent_pm.sum())
-    df.loc[inconsistent_pm, "pm10_mean"] = np.maximum(
-        df.loc[inconsistent_pm, "pm10_mean"],
-        df.loc[inconsistent_pm, "pm2_5_mean"] * 1.12,
-    )
 
-    audit["missing_after"] = {col: int(df[col].isna().sum()) for col in num_cols}
+def load_fires() -> pd.DataFrame | None:
+    files = sorted(glob.glob(str(FIRMS_DIR / "fires_*.csv")))
+    if not files:
+        return None
+    df = pd.concat((pd.read_csv(f) for f in files), ignore_index=True)
+    if df.empty:
+        return None
+    df["acq_date"] = pd.to_datetime(df["acq_date"])
+    return df
+
+
+# ----------------------------------------------------------------------------- cleaning
+def clean_daily(df: pd.DataFrame):
+    df = df.sort_values(["city_id", "date"]).reset_index(drop=True)
+    cols = [c for c in POLLUTANT_BOUNDS if c in df.columns]
+    audit = {
+        "data_source": "CAMS via Open-Meteo",
+        "initial_rows": int(len(df)),
+        "cities": int(df["city_id"].nunique()),
+        "date_range": [str(df["date"].min().date()), str(df["date"].max().date())],
+        "missing_before": {c: int(df[c].isna().sum()) for c in cols},
+        "out_of_bounds_removed": {},
+        "incomplete_days_removed": int((df["hours_reported"] < 18).sum()) if "hours_reported" in df else 0,
+    }
+    if "hours_reported" in df:
+        df.loc[df["hours_reported"] < 18, cols] = np.nan
+    for col in cols:
+        lo, hi = POLLUTANT_BOUNDS[col]
+        bad = (df[col] < lo) | (df[col] > hi)
+        audit["out_of_bounds_removed"][col] = int(bad.sum())
+        df.loc[bad, col] = np.nan
+    # Short gaps (<= 3 days) are interpolated within each city; longer gaps stay missing.
+    df[cols] = df.groupby("city_id", group_keys=False)[cols].apply(
+        lambda g: g.interpolate(method="linear", limit=3, limit_area="inside"))
+    bad_pm = df["pm2_5_mean"] > df["pm10_mean"]
+    audit["pm25_exceeding_pm10"] = int(bad_pm.sum())
+    df.loc[bad_pm, "pm10_mean"] = df.loc[bad_pm, "pm2_5_mean"]
+    audit["missing_after"] = {c: int(df[c].isna().sum()) for c in cols}
+
+    df["year"] = df["date"].dt.year
+    df["month"] = df["date"].dt.month
+    df["season"] = df["month"].map(assign_imd_season)
+    df["aqi_pm"] = aqi_lib.particulate_aqi(df["pm2_5_mean"], df["pm10_mean"]).round(0)
+    df["aqi_category"] = aqi_lib.category(df["aqi_pm"])
+    df["exceeds_naaqs_pm25"] = df["pm2_5_mean"] > NAAQS_PM25_24H
     return df, audit
 
 
-def engineer_regional_features(df_clean: pd.DataFrame) -> pd.DataFrame:
-    df = df_clean.copy()
-    df["month"] = df["date"].dt.month
-    df["season"] = df["month"].map(assign_imd_season)
+# ----------------------------------------------------------------------------- fire + weather
+def attach_fire_counts(daily: pd.DataFrame, cities: pd.DataFrame, fires: pd.DataFrame | None,
+                       weather: pd.DataFrame | None) -> pd.DataFrame:
+    """Adds per city-day: fires within 300 km, and fires within 300 km in the upwind sector."""
+    daily = daily.copy()
+    if weather is not None:
+        daily = daily.merge(weather, on=["city_id", "date"], how="left")
+    else:
+        for col in ("wind_speed_ms", "wind_from_deg", "wind_steadiness", "blh_max_m", "ventilation_coef"):
+            daily[col] = np.nan
+    daily["fires_300km"] = np.nan
+    daily["fires_upwind_300km"] = np.nan
+    if fires is None:
+        return daily
 
-    # Base metadata per region
-    meta = (
-        df.groupby("region")
-        .agg(
-            state=("state", "first"),
-            geo_zone=("geo_zone", "first"),
-            latitude=("latitude", "first"),
-            longitude=("longitude", "first"),
-            annual_aod_mean=("insat_daytime_aod", "mean"),
-            annual_pm25_mean=("pm2_5_mean", "mean"),
-            annual_pm10_mean=("pm10_mean", "mean"),
-            annual_dust_mean=("dust_mean", "mean"),
-            annual_co_mean=("co_mean", "mean"),
-            annual_no2_mean=("no2_mean", "mean"),
-            annual_so2_mean=("so2_mean", "mean"),
-            annual_o3_mean=("o3_mean", "mean"),
-            aod_p95=("insat_daytime_aod", lambda s: np.percentile(s, 95)),
-            pm25_p95=("pm2_5_mean", lambda s: np.percentile(s, 95)),
-            severe_hotspot_days=("pm2_5_mean", lambda s: int((s > 90.0).sum())),
-        )
-        .reset_index()
-    )
+    coords = cities.set_index("city_id")[["lat", "lon"]]
+    ids = coords.index.to_numpy()
+    clat, clon = coords["lat"].to_numpy()[:, None], coords["lon"].to_numpy()[:, None]
+    wind = daily.pivot_table(index="date", columns="city_id", values="wind_from_deg") if weather is not None else None
 
-    # Seasonal means for AOD, PM2.5, Dust, and CO
-    seasonal = (
-        df.groupby(["region", "season"])
-        .agg(
-            aod=("insat_daytime_aod", "mean"),
-            pm25=("pm2_5_mean", "mean"),
-            pm10=("pm10_mean", "mean"),
-            dust=("dust_mean", "mean"),
-            co=("co_mean", "mean"),
-        )
-        .unstack("season")
-    )
-    seasonal.columns = [f"{metric}_{season}" for metric, season in seasonal.columns]
-    seasonal = seasonal.reset_index()
+    records = []
+    for date, grp in fires.groupby("acq_date"):
+        flat, flon = grp["latitude"].to_numpy()[None, :], grp["longitude"].to_numpy()[None, :]
+        near = haversine_km(clat, clon, flat, flon) <= FIRE_RADIUS_KM
+        total = near.sum(axis=1)
+        if wind is not None and date in wind.index:
+            wdir = wind.loc[date].reindex(ids).to_numpy()[:, None]
+            up = near & is_upwind(clat, clon, flat, flon, wdir)
+            upwind = np.where(np.isnan(wdir[:, 0]), np.nan, up.sum(axis=1))
+        else:
+            upwind = np.full(len(ids), np.nan)
+        records.append(pd.DataFrame({"city_id": ids, "date": date, "f_all": total, "f_up": upwind}))
+    counts = pd.concat(records, ignore_index=True)
+    daily = daily.merge(counts, on=["city_id", "date"], how="left")
+    # Days with no detections in the file are genuine zeros (the whole period was downloaded).
+    daily["fires_300km"] = daily["f_all"].fillna(0.0)
+    has_wind = daily["wind_from_deg"].notna()
+    daily["fires_upwind_300km"] = np.where(has_wind, daily["f_up"].fillna(0.0), np.nan)
+    return daily.drop(columns=["f_all", "f_up"])
 
-    # Monthly Coefficient of Variation (quantifies how much seasonal info is lost in a single annual average)
-    monthly_pm25 = df.groupby(["region", "month"])["pm2_5_mean"].mean().unstack("month")
-    monthly_aod = df.groupby(["region", "month"])["insat_daytime_aod"].mean().unstack("month")
 
-    seasonality_stats = pd.DataFrame({
-        "region": monthly_pm25.index,
-        "pm25_seasonal_cv": (monthly_pm25.std(axis=1) / monthly_pm25.mean(axis=1)).values,
-        "aod_seasonal_cv": (monthly_aod.std(axis=1) / monthly_aod.mean(axis=1)).values,
-        "peak_month": monthly_pm25.idxmax(axis=1).values,
-    })
+# ----------------------------------------------------------------------------- features
+def _features_for(df: pd.DataFrame) -> dict:
+    """Feature vector for one city over whatever period `df` covers."""
+    s = df.groupby("season")
+    seasonal = s[["pm2_5_mean", "pm10_mean", "co_mean", "dust_mean", "aod_mean"]].mean()
+    seasonal = seasonal.reindex(SEASONS)
+    ann = df[["pm2_5_mean", "pm10_mean", "co_mean", "no2_mean", "so2_mean", "aod_mean", "dust_mean"]].mean()
+    monthly_pm25 = df.groupby("month")["pm2_5_mean"].mean()
+    pm25_season_sum = seasonal["pm2_5_mean"].sum()
+    n_years = max(1, df["year"].nunique())
 
-    reg = meta.merge(seasonal, on="region").merge(seasonality_stats, on="region")
+    f = {
+        "annual_pm25_mean": ann["pm2_5_mean"],
+        "annual_pm10_mean": ann["pm10_mean"],
+        "annual_aod_mean": ann["aod_mean"],
+        "annual_no2_mean": ann["no2_mean"],
+        "annual_so2_mean": ann["so2_mean"],
+        "annual_co_mean": ann["co_mean"],
+        "annual_dust_mean": ann["dust_mean"],
+        "naaqs_exceedance_days_per_year": df["exceeds_naaqs_pm25"].sum() / n_years,
+        "peak_month": int(monthly_pm25.idxmax()),
+        "cleanest_month": int(monthly_pm25.idxmin()),
+    }
+    for season in SEASONS:
+        f[f"pm25_{season}"] = seasonal.loc[season, "pm2_5_mean"]
+        f[f"{season.split('_')[0]}_pm25_share"] = seasonal.loc[season, "pm2_5_mean"] / pm25_season_sum
+    f["postmonsoon_smoke_spike"] = (
+        (seasonal.loc["postmonsoon_on", "pm2_5_mean"] / ann["pm2_5_mean"])
+        * (seasonal.loc["postmonsoon_on", "co_mean"] / ann["co_mean"]))
+    f["winter_inversion_ratio"] = seasonal.loc["winter_djf", "pm2_5_mean"] / ann["pm2_5_mean"]
+    f["premonsoon_dust_index"] = seasonal.loc["premonsoon_mam", "dust_mean"] / (ann["dust_mean"] + 1.0)
+    # CAMS "dust" covers all dust sizes (up to ~20 um), so it is not a fraction of PM10:
+    # use the absolute Mar-May dust load instead of a ratio.
+    f["dust_mam_mean"] = seasonal.loc["premonsoon_mam", "dust_mean"]
+    f["coarse_fraction"] = float(np.clip(1 - ann["pm2_5_mean"] / ann["pm10_mean"], 0, 1))
+    f["so2_to_no2_ratio"] = ann["so2_mean"] / (ann["no2_mean"] + 0.5)
+    f["pm25_seasonal_cv"] = monthly_pm25.std() / monthly_pm25.mean()
+    f["pm25_peak_to_mean"] = df["pm2_5_mean"].quantile(0.95) / ann["pm2_5_mean"]
 
-    # Engineered Source & Seasonal Pattern Ratios (Core Clustering Features)
-    aod_season_sum = (
-        reg["aod_winter_djf"]
-        + reg["aod_premonsoon_mam"]
-        + reg["aod_monsoon_jjas"]
-        + reg["aod_postmonsoon_on"]
-    )
-    reg["winter_aod_share"] = reg["aod_winter_djf"] / aod_season_sum
-    reg["premonsoon_aod_share"] = reg["aod_premonsoon_mam"] / aod_season_sum
-    reg["monsoon_aod_share"] = reg["aod_monsoon_jjas"] / aod_season_sum
-    reg["postmonsoon_aod_share"] = reg["aod_postmonsoon_on"] / aod_season_sum
+    # External evidence (not used for clustering)
+    on = df[df["month"].isin([10, 11])]
+    djf = df[df["month"].isin([12, 1, 2])]
+    f["fires_300km_on_daily"] = on["fires_300km"].mean() if on["fires_300km"].notna().any() else np.nan
+    f["upwind_fires_on_daily"] = on["fires_upwind_300km"].mean() if on["fires_upwind_300km"].notna().any() else np.nan
+    f["fire_pm25_lag_corr"] = _fire_lag_corr(on)
+    vc = djf["ventilation_coef"]
+    f["ventilation_djf_median"] = vc.median() if vc.notna().any() else np.nan
+    f["poor_ventilation_days_djf"] = ((vc < POOR_VENTILATION).sum() / n_years) if vc.notna().any() else np.nan
+    return f
 
-    # Post-monsoon stubble-burning spike ratio (Oct-Nov PM2.5 & CO relative to Monsoon/Annual baseline)
-    reg["postmonsoon_smoke_spike"] = (
-        (reg["pm25_postmonsoon_on"] / reg["annual_pm25_mean"])
-        * (reg["co_postmonsoon_on"] / reg["annual_co_mean"])
-    )
 
-    # Winter thermal inversion intensification ratio (DJF PM2.5 relative to annual mean)
-    reg["winter_inversion_ratio"] = reg["pm25_winter_djf"] / reg["annual_pm25_mean"]
+def _fire_lag_corr(on: pd.DataFrame) -> float:
+    """Best Spearman correlation between upwind (or nearby) fire counts and PM2.5 0-3 days later."""
+    col = "fires_upwind_300km" if on["fires_upwind_300km"].notna().sum() > 30 else "fires_300km"
+    if on[col].notna().sum() < 30 or on[col].sum() == 0:
+        return np.nan
+    best = np.nan
+    s = on.sort_values("date").set_index("date")
+    for lag in range(0, 4):
+        pm_later = s["pm2_5_mean"].shift(-lag, freq="D").reindex(s.index)
+        r = s[col].corr(pm_later, method="spearman")
+        if pd.notna(r) and (np.isnan(best) or r > best):
+            best = r
+    return best
 
-    # Pre-monsoon mineral dust storm index (MAM Dust & coarse fraction)
-    reg["premonsoon_dust_index"] = reg["dust_premonsoon_mam"] / (reg["annual_dust_mean"] + 1.0)
-    reg["coarse_dust_fraction"] = (
-        (reg["annual_pm10_mean"] - reg["annual_pm25_mean"]) / reg["annual_pm10_mean"]
-    ).clip(0.05, 0.90)
 
-    # Fine combustion fraction (PM2.5 / PM10)
-    reg["fine_combustion_fraction"] = (reg["annual_pm25_mean"] / reg["annual_pm10_mean"]).clip(0.10, 0.95)
+def engineer_features(daily: pd.DataFrame, cities: pd.DataFrame):
+    meta = cities.set_index("city_id")[["city", "state", "lat", "lon", "list_status"]]
+    pooled = pd.DataFrame({cid: _features_for(g) for cid, g in daily.groupby("city_id")}).T
+    pooled = meta.join(pooled, how="inner")
+    by_year = []
+    for (cid, year), g in daily.groupby(["city_id", "year"]):
+        row = _features_for(g)
+        row.update({"city_id": cid, "year": year})
+        by_year.append(row)
+    by_year = pd.DataFrame(by_year)
+    pooled.index.name = "city_id"
+    return pooled.reset_index(), by_year
 
-    # Industrial Coal/Smelting vs. Urban Traffic signature: SO2 / NO2 ratio & chronic SO2 load
-    reg["so2_to_no2_ratio"] = reg["annual_so2_mean"] / (reg["annual_no2_mean"] + 0.5)
 
-    # Peak-to-Mean Spikiness Ratio (95th percentile vs Annual Mean)
-    reg["aod_peak_to_mean"] = reg["aod_p95"] / reg["annual_aod_mean"]
-    reg["pm25_peak_to_mean"] = reg["pm25_p95"] / reg["annual_pm25_mean"]
-
-    return reg
+def monthly_profile(daily: pd.DataFrame) -> pd.DataFrame:
+    """City x month climatology used by the planner calendar."""
+    g = daily.groupby(["city_id", "month"])
+    prof = pd.DataFrame({
+        "pm25_median": g["pm2_5_mean"].median(),
+        "pm25_p25": g["pm2_5_mean"].quantile(0.25),
+        "pm25_p75": g["pm2_5_mean"].quantile(0.75),
+        "pm25_mean": g["pm2_5_mean"].mean(),
+        "pm10_mean": g["pm10_mean"].mean(),
+        "dust_mean": g["dust_mean"].mean(),
+        "co_mean": g["co_mean"].mean(),
+        "no2_mean": g["no2_mean"].mean(),
+        "so2_mean": g["so2_mean"].mean(),
+        "aod_mean": g["aod_mean"].mean(),
+        "aqi_median": g["aqi_pm"].median(),
+        "exceed_days_per_year": g["exceeds_naaqs_pm25"].sum() / daily["year"].nunique(),
+        "fires_300km_daily": g["fires_300km"].mean(),
+        "upwind_fires_daily": g["fires_upwind_300km"].mean(),
+        "ventilation_median": g["ventilation_coef"].median(),
+    }).reset_index()
+    prof["aqi_category"] = aqi_lib.category(prof["aqi_median"])
+    ann = daily.groupby("city_id")[["pm2_5_mean", "co_mean", "so2_mean"]].mean()
+    prof = prof.merge(ann.add_prefix("annual_"), left_on="city_id", right_index=True)
+    prof["pm25_vs_annual"] = prof["pm25_mean"] / prof["annual_pm2_5_mean"]
+    prof["co_vs_annual"] = prof["co_mean"] / prof["annual_co_mean"]
+    return prof.drop(columns=[c for c in prof.columns if c.startswith("annual_")]).round(4)
 
 
 def main():
-    os.makedirs("data/processed", exist_ok=True)
-    raw_path = "data/raw/india_insat_aod_air_quality_raw.csv"
-    print(f"Loading raw dataset from {raw_path}...")
-    df_raw = pd.read_csv(raw_path)
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    city_cells = load_city_cells()
+    print("Loading CAMS daily series...")
+    raw = load_cams(city_cells)
+    weather = load_weather(city_cells)
+    fires = load_fires()
+    print(f"  weather cells: {0 if weather is None else weather['city_id'].nunique()}, "
+          f"fire detections: {0 if fires is None else len(fires):,}")
 
-    print("Running 5-stage data cleaning & physical validation pipeline...")
-    df_clean, audit = clean_daily_data(df_raw)
-    clean_daily_path = "data/processed/india_daily_cleaned.csv"
-    df_clean.to_csv(clean_daily_path, index=False)
+    print("Quality checks + particulate AQI...")
+    daily, audit = clean_daily(raw)
+    daily = attach_fire_counts(daily, city_cells, fires, weather)
+    audit["weather_available"] = weather is not None
+    audit["fire_data_available"] = fires is not None
+    audit["fire_detections"] = 0 if fires is None else int(len(fires))
 
-    print("Engineering regional seasonal & pollution-source hotspot features...")
-    df_features = engineer_regional_features(df_clean)
-    feat_path = "data/processed/india_regional_hotspot_features.csv"
-    df_features.to_csv(feat_path, index=False)
+    print("Engineering city features (pooled + per year)...")
+    feats, feats_year = engineer_features(daily, city_cells)
+    prof = monthly_profile(daily)
 
-    audit["final_regions"] = int(len(df_features))
-    audit["engineered_feature_count"] = int(len(df_features.columns))
-    audit_path = "data/processed/cleaning_audit_report.json"
-    with open(audit_path, "w", encoding="utf-8") as f:
+    daily.to_csv(PROCESSED_DIR / "daily_cleaned.csv", index=False)
+    feats.to_csv(PROCESSED_DIR / "city_features.csv", index=False)
+    feats_year.to_csv(PROCESSED_DIR / "city_features_by_year.csv", index=False)
+    prof.to_csv(PROCESSED_DIR / "monthly_profile.csv", index=False)
+    audit["feature_columns"] = int(feats.shape[1])
+    with open(PROCESSED_DIR / "cleaning_audit_report.json", "w", encoding="utf-8") as f:
         json.dump(audit, f, indent=2)
 
-    print("\n=== DATA CLEANING & FEATURE ENGINEERING SUMMARY ===")
-    print(f"Cleaned daily records : {len(df_clean):,} rows saved to {clean_daily_path}")
-    print(f"Regional feature table: {df_features.shape[0]} regions x {df_features.shape[1]} columns saved to {feat_path}")
-    print(f"Missing AOD imputed   : {audit['missing_before']['insat_daytime_aod']} -> {audit['missing_after']['insat_daytime_aod']}")
-    print(f"Missing PM2.5 imputed : {audit['missing_before']['pm2_5_mean']} -> {audit['missing_after']['pm2_5_mean']}")
-    print(f"Sensor glitches fixed : {sum(audit['negative_glitches_fixed'].values())} negative, {sum(audit['extreme_spikes_fixed'].values())} extreme spikes")
-    print(f"PM2.5 <= PM10 enforced: {audit['pm25_exceeding_pm10_fixed']} records adjusted")
+    print(f"  {len(daily):,} city-days, {len(feats)} cities, {feats.shape[1]} feature columns")
+    print(f"  years present: {sorted(daily['year'].unique())} (expected {list(YEARS)})")
+    print(f"  out-of-bounds removed: {sum(audit['out_of_bounds_removed'].values())}, "
+          f"missing after: {sum(audit['missing_after'].values())}")
 
 
 if __name__ == "__main__":

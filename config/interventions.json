@@ -1,0 +1,148 @@
+{
+  "_about": "Hand-curated reference guidance linking each pollution signature to commonly used Indian clean-air measures and when to start them. It summarises public policy instruments (NCAP, CAQM/GRAP, MoEFCC/CPCB rules) for planning conversations. It is NOT official advice; check current rules with the cited agencies before acting.",
+  "_lead_months": "How many months BEFORE the first high-risk month a measure should start. 0 = during the risk months. 'year_round' measures have no seasonal timing.",
+  "signatures": {
+    "postmonsoon_smoke": {
+      "label": "Post-monsoon smoke (crop-residue season)",
+      "plain": "In October and November, smoke from burning paddy straw (in your region or upwind) pushes fine-particle levels up sharply.",
+      "measures": [
+        {
+          "action": "Line up paddy-straw management before harvest: crop-residue machinery through custom-hiring centres, and straw supply contracts with biomass power, brick kiln, and compressed-biogas plants.",
+          "lead_months": 2, "kind": "prevent", "owner": "State agriculture department, district administration",
+          "reference": {"title": "Commission for Air Quality Management (CAQM) directions on paddy-straw management", "url": "https://caqm.nic.in/"}
+        },
+        {
+          "action": "Run farmer outreach and bio-decomposer spraying campaigns in villages with past fire hotspots.",
+          "lead_months": 1, "kind": "prevent", "owner": "Agriculture department, Krishi Vigyan Kendras",
+          "reference": {"title": "Department of Agriculture & Farmers Welfare", "url": "https://agriwelfare.gov.in/"}
+        },
+        {
+          "action": "Track satellite fire detections daily and send field teams to new fire clusters.",
+          "lead_months": 0, "kind": "respond", "owner": "District nodal officers, State Pollution Control Board",
+          "reference": {"title": "NASA FIRMS active-fire data", "url": "https://firms.modaps.eosdis.nasa.gov/"}
+        },
+        {
+          "action": "Issue health advisories for schools and vulnerable groups on smoke-forecast days.",
+          "lead_months": 0, "kind": "protect", "owner": "Health department, urban local body",
+          "reference": {"title": "CPCB National Air Quality Index", "url": "https://cpcb.gov.in/"}
+        }
+      ]
+    },
+    "winter_stagnation": {
+      "label": "Winter smog (stagnant air)",
+      "plain": "In winter, cold, still air and a shallow mixing layer trap local emissions near the ground, so everyday sources build up to unhealthy levels.",
+      "measures": [
+        {
+          "action": "Agree graded action stages before winter: AQI triggers, which activities stop at each stage, and named enforcement teams.",
+          "lead_months": 1, "kind": "prevent", "owner": "City clean-air cell, State Pollution Control Board",
+          "reference": {"title": "CAQM Graded Response Action Plan (GRAP)", "url": "https://caqm.nic.in/"}
+        },
+        {
+          "action": "Step up road-dust control: mechanised sweeping, water sprinkling, paving unpaved shoulders, and prompt pothole repair.",
+          "lead_months": 1, "kind": "prevent", "owner": "Municipal corporation, PWD",
+          "reference": {"title": "NCAP city action plans (PRANA portal)", "url": "https://prana.cpcb.gov.in/"}
+        },
+        {
+          "action": "Stop open burning of waste and biomass for heating: night patrols, plus heaters or clean fuel for night shelters and security staff.",
+          "lead_months": 0, "kind": "prevent", "owner": "Urban local body",
+          "reference": {"title": "NCAP city action plans (PRANA portal)", "url": "https://prana.cpcb.gov.in/"}
+        },
+        {
+          "action": "Use 3–5 day AQI forecasts to pre-announce restrictions (construction, diesel generators, polluting fuels) before stagnant spells.",
+          "lead_months": 0, "kind": "respond", "owner": "City clean-air cell",
+          "reference": {"title": "CAQM Graded Response Action Plan (GRAP)", "url": "https://caqm.nic.in/"}
+        },
+        {
+          "action": "Public health alerts and school timing changes on Very Poor or Severe days.",
+          "lead_months": 0, "kind": "protect", "owner": "Health and education departments",
+          "reference": {"title": "CPCB National Air Quality Index", "url": "https://cpcb.gov.in/"}
+        }
+      ]
+    },
+    "premonsoon_dust": {
+      "label": "Pre-monsoon dust",
+      "plain": "From March to May, hot, windy and dry weather lifts mineral dust from open land, roads and deserts, mostly coarse PM10.",
+      "measures": [
+        {
+          "action": "Enforce construction and demolition dust rules: covered material, wind barriers, water spraying, and covered transport.",
+          "lead_months": 1, "kind": "prevent", "owner": "Urban local body, State Pollution Control Board",
+          "reference": {"title": "MoEFCC dust-mitigation rules and C&D Waste Management Rules", "url": "https://moef.gov.in/"}
+        },
+        {
+          "action": "Plant green belts and windbreaks, and stabilise open land and road shoulders. Plant in the previous monsoon so cover is established by March.",
+          "lead_months": 8, "kind": "prevent", "owner": "Forest department, urban local body",
+          "reference": {"title": "NCAP city action plans (PRANA portal)", "url": "https://prana.cpcb.gov.in/"}
+        },
+        {
+          "action": "Pass on IMD dust-storm warnings with outdoor-work and school advisories.",
+          "lead_months": 0, "kind": "protect", "owner": "District disaster management authority",
+          "reference": {"title": "India Meteorological Department", "url": "https://mausam.imd.gov.in/"}
+        }
+      ]
+    },
+    "industrial_combustion": {
+      "label": "Industrial / coal combustion (high SO₂)",
+      "plain": "SO₂ is high relative to traffic NO₂ all year, which points to coal-fired power, mining or heavy industry nearby.",
+      "measures": [
+        {
+          "action": "Check that thermal power plants are on track with SO₂ emission norms and flue-gas desulphurisation (FGD).",
+          "lead_months": "year_round", "kind": "prevent", "owner": "State Pollution Control Board, CPCB",
+          "reference": {"title": "Central Pollution Control Board", "url": "https://cpcb.gov.in/"}
+        },
+        {
+          "action": "Audit online continuous emission monitoring for red-category industries and move clusters to cleaner fuels (e.g. piped natural gas).",
+          "lead_months": "year_round", "kind": "prevent", "owner": "State Pollution Control Board",
+          "reference": {"title": "Central Pollution Control Board", "url": "https://cpcb.gov.in/"}
+        },
+        {
+          "action": "Cover coal transport and storage, and suppress dust on haul roads near mines and plants.",
+          "lead_months": "year_round", "kind": "prevent", "owner": "Mining and industry departments",
+          "reference": {"title": "NCAP city action plans (PRANA portal)", "url": "https://prana.cpcb.gov.in/"}
+        }
+      ]
+    },
+    "urban_traffic": {
+      "label": "Urban traffic & combustion (high NO₂)",
+      "plain": "High NO₂ points to dense vehicle traffic and urban fuel burning; it usually gets worse in winter.",
+      "measures": [
+        {
+          "action": "Enforce Pollution Under Control (PUC) checks and act against visibly polluting vehicles; manage heavy diesel freight entry at peak hours.",
+          "lead_months": "year_round", "kind": "prevent", "owner": "Transport department, traffic police",
+          "reference": {"title": "Ministry of Road Transport & Highways", "url": "https://morth.nic.in/"}
+        },
+        {
+          "action": "Add buses and electrify the fleet; improve last-mile, walking and cycling links.",
+          "lead_months": "year_round", "kind": "prevent", "owner": "Urban transport authority",
+          "reference": {"title": "NCAP city action plans (PRANA portal)", "url": "https://prana.cpcb.gov.in/"}
+        },
+        {
+          "action": "Clear congestion hotspots and manage parking.",
+          "lead_months": "year_round", "kind": "prevent", "owner": "Traffic police, municipal corporation",
+          "reference": {"title": "NCAP city action plans (PRANA portal)", "url": "https://prana.cpcb.gov.in/"}
+        }
+      ]
+    },
+    "cleaner_baseline": {
+      "label": "Lower-pollution baseline",
+      "plain": "Pollution is lower than in most NCAP cities, with no strong seasonal source. The job is to keep it that way.",
+      "measures": [
+        {
+          "action": "Protect the gains: keep monitoring, screen new industrial siting, and prevent open waste burning as the city grows.",
+          "lead_months": "year_round", "kind": "prevent", "owner": "Urban local body, State Pollution Control Board",
+          "reference": {"title": "NCAP city action plans (PRANA portal)", "url": "https://prana.cpcb.gov.in/"}
+        }
+      ]
+    },
+    "mixed": {
+      "label": "Mixed sources",
+      "plain": "No single season or source dominates; several moderate sources add up.",
+      "measures": [
+        {
+          "action": "Run a city source-apportionment study to find the biggest local contributors before committing large budgets.",
+          "lead_months": "year_round", "kind": "prevent", "owner": "State Pollution Control Board, research institutions",
+          "reference": {"title": "NCAP city action plans (PRANA portal)", "url": "https://prana.cpcb.gov.in/"}
+        }
+      ]
+    }
+  }
+}

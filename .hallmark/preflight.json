@@ -1,0 +1,9 @@
+{
+  "date": "2026-11-08",
+  "target": "web/ (index.html, styles.css, app.js; hash routes #/, #/city/<id>, #/brief/<id>, #/explore)",
+  "design_md": null,
+  "brand": "none; wordmark 'AeroScope' in text only, no logo asset, no brand colour or face",
+  "preserved": ["every route and hash link", "city search (#city-picker, datalist #city-options)", "landing search and two entry paths", "resident view: today + 5-day live forecast, year at a glance, why it gets bad, advice", "planner brief: this month / coming up, timed action plan, month-by-month table, twins, peers, fingerprint, year by year, caveats", "collapsible panels with remembered state", "print (opens all panels) and CSV export", "explore map with projection and colour switches, groups, sortable city table, methods, figures"],
+  "introduced": ["Editorial theme tokens and base", "AQI, driver and group colours as tokens", "air calendar as the signature object"],
+  "material": {"real": "131 NCAP cities, CAMS 2023-2025 monthly data, live Open-Meteo forecast, FIRMS fire counts, CPCB AQI bands and health text, curated interventions with links", "pictures": "the product built: air calendar, forecast, action rows, map, charts", "absent": "photographs, logos, testimonials, user counts"}
+}

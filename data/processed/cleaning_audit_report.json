@@ -1,21 +1,12 @@
 {
-  "initial_rows": 39528,
-  "initial_regions": 108,
+  "data_source": "CAMS via Open-Meteo",
+  "initial_rows": 60280,
+  "cities": 55,
+  "date_range": [
+    "2023-01-01",
+    "2025-12-31"
+  ],
   "missing_before": {
-    "insat_daytime_aod": 402,
-    "aod_mean": 0,
-    "aod_max": 0,
-    "dust_mean": 0,
-    "pm2_5_mean": 474,
-    "pm2_5_max": 0,
-    "pm10_mean": 0,
-    "co_mean": 0,
-    "no2_mean": 0,
-    "so2_mean": 0,
-    "o3_mean": 0
-  },
-  "negative_glitches_fixed": {
-    "insat_daytime_aod": 0,
     "aod_mean": 0,
     "aod_max": 0,
     "dust_mean": 0,
@@ -24,15 +15,14 @@
     "pm10_mean": 0,
     "co_mean": 0,
     "no2_mean": 0,
-    "so2_mean": 32,
+    "so2_mean": 0,
     "o3_mean": 0
   },
-  "extreme_spikes_fixed": {
-    "insat_daytime_aod": 0,
+  "out_of_bounds_removed": {
     "aod_mean": 0,
     "aod_max": 0,
     "dust_mean": 0,
-    "pm2_5_mean": 24,
+    "pm2_5_mean": 0,
     "pm2_5_max": 0,
     "pm10_mean": 0,
     "co_mean": 0,
@@ -40,9 +30,9 @@
     "so2_mean": 0,
     "o3_mean": 0
   },
-  "pm25_exceeding_pm10_fixed": 0,
+  "incomplete_days_removed": 0,
+  "pm25_exceeding_pm10": 0,
   "missing_after": {
-    "insat_daytime_aod": 0,
     "aod_mean": 0,
     "aod_max": 0,
     "dust_mean": 0,
@@ -54,6 +44,8 @@
     "so2_mean": 0,
     "o3_mean": 0
   },
-  "final_regions": 108,
-  "engineered_feature_count": 51
+  "weather_available": false,
+  "fire_data_available": false,
+  "fire_detections": 0,
+  "feature_columns": 37
 }

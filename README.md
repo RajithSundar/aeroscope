@@ -1,115 +1,108 @@
 # AeroScope
 
-**Satellite-to-surface air quality intelligence — mapping pollution airsheds, emission sources, and seasonal anomalies across India using ISRO INSAT-3D (`650 nm` AOD) and CPCB surface telemetry.**
+**Seasonal air-quality briefs for India's 131 NCAP cities: *when* each city's air gets bad, the *likely reasons*, and *which measures to start when*. Built on real Copernicus (CAMS) atmospheric data, NASA FIRMS fire detections and ERA5 weather.**
 
 ---
 
-## 1. Overview & Problem Statement
+## 1. The problem
 
-> *"Pollution hotspots vary by season and source, information lost in a single annual average. At the scale these records exist, nobody currently sorts them by hand, so every record gets identical, one-size-fits-all treatment."*
+India's National Clean Air Programme (NCAP) asks 131 cities to cut particulate pollution, and progress is mostly tracked as a single **annual average**. But two cities with the same annual average can have completely different problems:
 
-Districts such as **Ludhiana** (Oct–Nov Kharif paddy residue burning), **Patna** (Dec–Feb planetary boundary-layer thermal inversion), **Dhanbad** (year-round open-cast coal mining & thermal power smelting), and **Jodhpur** (Mar–May convective Thar desert mineral dust storms) exhibit nearly identical **annual average Aerosol Optical Depth (`AOD ≈ 0.50–0.65`)**, yet require completely different seasonal and policy interventions.
+- one gets its worst air in **Oct–Nov** from crop-residue smoke,
+- another in **Dec–Jan** when cold, still air traps local emissions,
+- another in **Mar–May** from desert dust,
+- another all year round from coal and heavy industry.
 
-**AeroScope** replaces one-size-fits-all annual averages with an end-to-end **unsupervised machine learning pipeline** and an **interactive 3D geospatial web workbench** across **108 Indian districts** (`39,528` daily records).
+Each needs different measures, started at different times of year. An annual number hides all of this, so plans end up generic.
 
----
+## 2. Who it is for
 
-## 2. Quick Start for Teammates
+| User | What they get |
+| :--- | :--- |
+| **City / state clean-air officers** (NCAP city action plans, State Pollution Control Boards) | A **city brief**: a month-by-month risk calendar, the likely driver of each bad month, a **timed action calendar** (what to start, when, who owns it, with the policy reference), similar cities to learn from, and a print/PDF + CSV export to attach to plans. |
+| **Residents** | A **"My city" page**: when and why the air is usually bad, a **live 5-day forecast** with the likely cause, and CPCB health advice for each AQI band. |
+| **Analysts / students** | An **Explore & methods** page: map of all cities, seasonal vs annual-average grouping side by side, every validation metric and figure. |
 
-### Option A: Launch the Interactive Web Workbench Immediately
-All pre-computed datasets (`data/`) and the serialized frontend payload (`web/data.js`) are included in the repository.
+## 3. Quick start
 
-**Windows (One Command):**
 ```powershell
+# Windows: open the web app with the data already in the repo
 .\start.bat
 ```
-
-**macOS / Linux / Cross-Platform:**
 ```bash
+# Any OS
 python -m http.server 8080 --directory web
 ```
-Then open **http://localhost:8080** in your browser.
+Then open http://localhost:8080.
 
----
-
-### Option B: Run the Full Python ML Pipeline from Scratch
-If you modify feature engineering, clustering hyperparameters, or frontend telemetry fields, rebuild the entire pipeline:
-
+### Rebuild from scratch
 ```bash
-# 1. Install Python dependencies
 pip install -r requirements.txt
-
-# 2. Run all 4 pipeline stages (or run `.\start.bat --rebuild` on Windows)
-python 01_extract_dataset.py
-python 02_clean_and_engineer.py
-python 03_unsupervised_clustering_study.py
-python 04_export_frontend_data.py
+cp .env.example .env          # optional: add FIRMS_MAP_KEY (free) for fire evidence
+.\start.bat --rebuild         # Windows
+sh run_pipeline.sh            # macOS / Linux
+python -m pytest -q tests     # unit tests
 ```
 
----
+The CAMS + ERA5 downloads use Open-Meteo's **free, key-less API**. A full 3-year download for 131 cities is slightly more than one day's free quota (about 10,000 weighted calls), so the fetchers **pace themselves, cache every city, and resume** where they stopped. If a run stops with "daily quota reached", re-run it the next day.
 
-## 3. Repository Architecture
+## 4. Data (all real, all public)
+
+| Source | What | Notes |
+| :--- | :--- | :--- |
+| [CPCB list of 131 non-attainment cities](https://cpcb.gov.in/uploads/Non-Attainment_Cities.pdf) | The city list | Geocoded with Open-Meteo; small industrial towns pinned by hand (`tools/build_city_list.py`). Eight "million-plus" cities on the list are funded under the 15th Finance Commission rather than designated non-attainment; they are flagged. |
+| [Copernicus CAMS](https://atmosphere.copernicus.eu/) global atmospheric composition via the [Open-Meteo Air Quality API](https://open-meteo.com/en/docs/air-quality-api) | Hourly PM2.5, PM10, CO, NO₂, SO₂, O₃, aerosol optical depth, dust, 2023–2025 → daily | A ~40 km model that assimilates satellite aerosol observations. **Not ground-monitor data.** |
+| ERA5 via the [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api) | Wind and boundary-layer height, Oct–Feb | Used for ventilation (stagnant air) and to find which fires are upwind. |
+| [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) VIIRS S-NPP | Active-fire detections over India and neighbours | Optional; needs a free MAP_KEY. Gives independent evidence for the smoke signature. |
+| `config/interventions.json` | Hand-curated measures per signature, with lead times, owners and links (CAQM/GRAP, NCAP/PRANA, MoEFCC, CPCB, IMD, MoRTH) | Reference guidance, **not** official advice. |
+
+## 5. Pipeline
 
 ```text
-aeroscope/
-├── 01_extract_dataset.py                 # Generates/extracts 39,528 daily INSAT-3D AOD & CPCB surface records
-├── 02_clean_and_engineer.py              # 5-stage physical cleaning + 51 regional seasonal/source features
-├── 03_unsupervised_clustering_study.py   # K-Means++, Hierarchical Linkage, DBSCAN, IsoForest+LOF, PCA/t-SNE & plots
-├── 04_export_frontend_data.py            # Pre-computes 5 algorithm modes & exports web/data.js (127 KB)
-├── requirements.txt                      # Python ML & scientific stack dependencies
-├── start.bat                             # One-click Windows launcher (`start.bat` or `start.bat --rebuild`)
-├── data/
-│   ├── raw/
-│   │   └── india_insat_aod_air_quality_raw.csv         # Raw daily telemetry (39,528 rows × 17 cols)
-│   └── processed/
-│       ├── india_daily_cleaned.csv                     # Cleaned daily time series (0 missing values)
-│       ├── india_regional_hotspot_features.csv         # 108 districts × 51 engineered features
-│       ├── india_regions_clustered_results.csv         # Final cluster labels, PCA/t-SNE coords & anomaly flags
-│       ├── clustering_k_validation_metrics.csv         # WCSS, Silhouette, DBI & Calinski-Harabasz across k=2..10
-│       ├── cleaning_audit_report.json                  # Imputed monsoon cloud outages & sensor glitch audit
-│       └── clustering_study_summary.json               # Summary validation metrics
-├── figures/
-│   ├── 01_annual_average_fallacy.png                   # Why single annual averages fail vs. monthly trajectories
-│   ├── 02_optimal_k_elbow_silhouette_dbi.png           # Elbow (WCSS), Silhouette & Davies-Bouldin curves (k=6)
-│   ├── 03_hierarchical_dendrogram_and_linkages.png     # Ward dendrogram & linkage comparison
-│   ├── 04_pca_tsne_and_india_spatial_map.png           # PCA, t-SNE & India geospatial cluster map
-│   ├── 05_cluster_seasonal_signatures_and_radar.png    # Monthly cluster trajectories + 15D Z-score heatmap
-│   └── 06_dbscan_and_anomaly_hotspots.png              # DBSCAN Core/Border/Noise + Isolation Forest hotspots
-└── web/
-    ├── index.html                                      # Interactive 5-algorithm workbench + study notes UI
-    ├── styles.css                                      # Vantage (terrain/steel) oklch() design token system
-    ├── app.js                                          # 3D India LiDAR point cloud, interactive SVG manifold & charts
-    └── data.js                                         # Pre-compiled 108-district telemetry & 5 algorithm payloads
+tools/build_city_list.py            → config/ncap_cities.csv (run only when the official list changes)
+01_fetch_cams.py                    → data/raw/cams/<cell>.csv        (daily CAMS series, cached, resumable)
+01b_fetch_weather.py                → data/raw/weather/<cell>.csv     (ERA5 Oct–Feb)
+01c_fetch_firms.py                  → data/raw/firms/fires_*.csv      (optional, needs FIRMS_MAP_KEY)
+02_clean_and_engineer.py            → data/processed/{daily_cleaned, city_features, city_features_by_year, monthly_profile}.csv
+03_unsupervised_clustering_study.py → data/processed/{city_clusters.csv, clustering_*.json/csv}, figures/*.png
+04_export_frontend_data.py          → web/data/{index.json, study.json, cities/<id>.json, figures/}
+web/                                → static app (no build step): index.html, styles.css, app.js
+aeroscope_core/                     → shared helpers: paths, city list, HTTP pacing, CPCB AQI, geometry
+tests/                              → pytest unit tests (AQI breakpoints, seasons, features, calendar logic, config)
 ```
 
----
+### How cities are grouped
+Each city is described by **15 features about the shape of its year**, not its level: the seasonal shares of PM2.5, the Oct–Nov smoke spike (PM2.5 × CO vs annual), the winter-to-annual ratio, Mar–May desert-dust load and how seasonal it is, coarse fraction, SO₂/NO₂, NO₂ and SO₂ levels, PM2.5 level, monthly variability and spikiness. Skewed features are log-transformed, then all are standardised.
 
-## 4. The 15 Clustering Features & 5 Interactive Algorithm Modes
+- **K-Means**, with *k* chosen from silhouette **and** bootstrap stability (never fixed in advance), cross-checked with Ward hierarchical clustering, DBSCAN and Isolation Forest + LOF outliers.
+- Groups are **named from their centroid features** (e.g. a high winter share → "Winter smog (stagnant air)"). If fire data is missing, an Oct–Nov peak is labelled "post-monsoon peak (smoke not verified)" rather than "smoke".
+- **Fire and ventilation data are kept out of clustering**, so they can serve as independent evidence.
 
-Each district is represented by a `15-dimensional` feature vector (`X_raw` → `np.log1p` skewness stabilization → `StandardScaler` Z-score normalization):
-1. **Seasonal AOD Shares (4 features):** `winter_aod_share` (`DJF`), `premonsoon_aod_share` (`MAM`), `monsoon_aod_share` (`JJAS`), `postmonsoon_aod_share` (`ON`)
-2. **Episodic Surge Ratios (3 features):** `postmonsoon_smoke_spike`, `winter_inversion_ratio`, `premonsoon_dust_index`
-3. **Particle Size & Chemical Source Fingerprints (3 features):** `coarse_dust_fraction` ($(\text{PM}_{10}-\text{PM}_{2.5})/\text{PM}_{10}$), `fine_combustion_fraction` ($\text{PM}_{2.5}/\text{PM}_{10}$), `so2_to_no2_ratio`
-4. **Baseline Load & Volatility (5 features):** `annual_no2_mean`, `annual_so2_mean`, `annual_aod_mean`, `aod_seasonal_cv`, `pm25_peak_to_mean`
+### How monthly drivers and the action calendar are built
+For each city and month (thresholds in `04_export_frontend_data.py`):
+- **High-risk month:** median particulate AQI > 200 (Poor or worse), or ≥ 10 days above the 24-h PM2.5 standard (60 µg/m³).
+- **Smoke:** Oct–Dec, with ≥ 15 upwind fire detections/day within 300 km (FIRMS + ERA5 wind). Without fire data it falls back to a CO + PM2.5 spike.
+- **Stagnant air:** Nov–Feb, PM2.5 ≥ 1.25× the city's annual mean, and (when ERA5 is available) ventilation < 2,500 m²/s.
+- **Dust:** Mar–Jun, CAMS desert dust ≥ 50 µg/m³.
+- **Industry / traffic:** year-round, when the city's SO₂/NO₂ or NO₂ signature is well above the typical NCAP city.
 
-### Interactive Workbench Modes (`#algo-select` in `web/`)
-| Mode | Algorithm | Key Result on 108 Districts | Silhouette | DBI | ARI |
-| :--- | :--- | :--- | :---: | :---: | :---: |
-| **1** | **K-Means++ (`k = 6`, `n_init = 30`)** | Optimal Voronoi centroid partition across 6 airsheds | `0.7803` | `0.3027` | `1.0000` |
-| **2** | **Hierarchical Agglomerative Tree (`k = 6`)** | Nearest-neighbor merge tree; shifts **12 boundary cities** (`Jaipur`, `Gwalior`, `Kolkata`, `Dehradun`) | `0.6999` | `0.4714` | `0.8732` |
-| **3** | **DBSCAN (`eps = 0.78, min_samples = 5`)** | Identifies **58 Core**, **26 Border**, and **24 Noise Outliers (`-1`)** | `0.7900` | `0.2939` | `0.8596` |
-| **4** | **Isolation Forest + LOF Consensus** | Flags **27 extreme regional hotspots** (`Sri Ganganagar`, `New Delhi`, `Ludhiana`, `Dhanbad`) | `0.7803` | `0.3027` | `1.0000` |
-| **5** | **Naive 1D Annual Average (`k = 6`)** | Baseline using only annual mean AOD/$\text{PM}_{2.5}$; **misgroups 31 districts** | `0.2942` | `1.7775` | `0.6049` |
+Each measure in `config/interventions.json` has a **lead time**. Its start month is the first peak month minus that lead time, so a city whose stagnant season runs Nov–Jan gets "agree graded-response stages" in **October**.
 
----
+## 6. Results
 
-## 5. Discovered Airshed Regimes ($k = 6$)
+<!-- RESULTS:START -->
+_Run the pipeline to fill this section._
+<!-- RESULTS:END -->
 
-| ID | Airshed Regime | Districts | Peak Season | Signature & Targeted Intervention |
-| :--- | :--- | :---: | :--- | :--- |
-| **C1** | **Post-Monsoon Biomass Smoke** | 14 | Oct–Nov (`ON`) | High fine fraction (`>0.64`) & CO spike (`3.2×`) in Punjab/Haryana (`Ludhiana`, `Amritsar`, `Sangrur`) → Crop residue management & bio-decomposers |
-| **C2** | **Pre-Monsoon Mineral Dust** | 10 | Mar–May (`MAM`) | High coarse fraction (`~0.72`) in Thar belt (`Jaisalmer`, `Jodhpur`, `Bikaner`) → Shelterbelt windbreaks & dust suppression |
-| **C3** | **Chronic Coal & Metallurgy** | 16 | Year-Round | Flat seasonal CV (`0.14`) & high $\text{SO}_2/\text{NO}_2$ (`1.45`) (`Dhanbad`, `Singrauli`, `Korba`, `Angul`) → 24/7 Flue-Gas Desulfurization (FGD) |
-| **C4** | **Winter IGP Inversion** | 17 | Dec–Feb (`DJF`) | Severe winter boundary-layer trapping (`1.65×` $\text{PM}_{2.5}$) (`New Delhi`, `Ghaziabad`, `Patna`, `Kanpur`) → Winter airshed GRAP controls |
-| **C5** | **Urban Vehicular Corridor** | 32 | Winter / Chronic | High vehicular $\text{NO}_2$, low $\text{SO}_2/\text{NO}_2$ (`0.22`) (`Mumbai`, `Bengaluru`, `Hyderabad`, `Chennai`) → Fleet electrification & transit |
-| **C6** | **Clean Coastal & Highland Baseline** | 19 | Low Year-Round | Marine washout & high-altitude ventilation (`AOD ≈ 0.18`) (`Kochi`, `Thiruvananthapuram`, `Shimla`, `Leh`) → Ecological airshed preservation |
+## 7. Limitations (read before using)
+
+- **Model, not monitors.** CAMS is a ~40 km global model. It captures regional seasonality well but reads **lower than CPCB ground stations** in the worst urban episodes (e.g. Delhi's winter). Use the **timing and pattern** as the main signal and treat absolute levels as indicative.
+- **Nearby cities share a signal.** Cities less than ~40 km apart (e.g. Delhi–Noida–Ghaziabad, Mumbai–Thane–Navi Mumbai, the Himachal industrial towns) get nearly identical data. The app flags this in peer lists.
+- **Source labels are hints, not source apportionment.** NO₂ and SO₂ are diluted at 40 km. A city source-apportionment study is the right tool before committing large budgets.
+- **Model upgrades.** CAMS is upgraded from time to time, which can shift levels between years; year-to-year changes should be read with care (see results).
+- **The interventions file is a curated summary** of public programmes. It links to the issuing agencies, but rules change, so check the latest directions.
+
+## 8. What would make it better
+- Validate and bias-correct CAMS against CPCB continuous monitors (e.g. via OpenAQ) where they exist.
+- Add ISRO INSAT-3D/3DR AOD (MOSDAC) for higher-frequency satellite aerosol over India.
+- Let cities record which measures they ran and when, then compare the next season against the city's own baseline.
